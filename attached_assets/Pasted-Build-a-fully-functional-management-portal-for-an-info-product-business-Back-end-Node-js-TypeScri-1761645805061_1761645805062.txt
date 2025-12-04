@@ -1,0 +1,239 @@
+Build a fully-functional management portal for an info-product business.
+Back end: Node.js (TypeScript) with Express.
+Front end: Vue 3 + Vite + Pinia + Vue Router + TailwindCSS.
+ORM: Prisma.
+DB: PostgreSQL (Neon) with .env for DATABASE_URL.
+Auth: email/password (bcrypt) + JWT cookies.
+RBAC roles: ADMIN, SALES, MARKETING, CSM. Admin = full access; others only their department routes/pages and data. Include guards on both API and UI routes.
+
+Use ApexCharts (or ECharts) for charts and a modern data table (sortable, filterable, paginated, CSV export). Provide date range presets (Today, 7D, MTD, QTD, YTD, Custom). Ship with a dummy seed database and a prisma/seed.ts so the app runs immediately.
+
+0) Design
+
+Copy the UX from the two attached screenshots (sidebar with icons, top “Welcome back” bar, KPI tiles, cards, and tables). Keep it clean (Tailwind), with iconography, soft shadows, rounded corners. Provide light theme only.
+
+1) Project layout
+/apps
+  /api (Express)
+  /web (Vue)
+  /shared (types, zod schemas)
+
+
+Use PNPM workspaces + Turborepo (optional) OR a simple two-folder setup—either is fine, but keep shared types.
+
+2) Auth & RBAC
+
+Users table with role enum: ADMIN | SALES | MARKETING | CSM.
+
+JWT in httpOnly cookie, refresh token rotation, password reset stub.
+
+API middleware: verifies JWT and enforces role access per route.
+
+Frontend route guards: redirect unauthorized roles to a “No Access” page.
+
+Seed 4 demo users (one per role) with passwords password123.
+
+3) Prisma schema (create these models)
+
+User(id, email, passwordHash, role, name)
+
+Organization(id, name) (link all data to org even if 1 org)
+
+Lead(id, orgId, name, email, firstUtmSource, firstUtmMedium, firstUtmCampaign, firstTouchAt, source) // source: SDR_OUTBOUND | WEBINAR | IG_DM | ADS
+
+Campaign(id, orgId, name, bucket, platform) // bucket: webinar_cold | webinar_retarg | follower_ads | organic
+
+Product(id, orgId, name, kind, listPriceCents) // kind: HIGH_TICKET | DEPOSIT | SUBSCRIPTION | OTHER
+
+Order(id, orgId, leadId, productId, campaignId?, status, totalCents, createdAt)
+
+Payment(id, orgId, orderId, amountCents, status, receivedAt, method)
+
+PaymentPlan(id, orgId, orderId, totalCents, status)
+
+PaymentPlanSchedule(id, orgId, planId, dueAt, amountCents, paidCents, status)
+
+ContentItem(id, orgId, title, status, editorId?, scheduledAt, createdAt) // status: PRODUCED | REVISION | SCHEDULED | PUBLISHED
+
+EditorContractor(id, orgId, name, contractRef, active)
+
+ContractorPayment(id, orgId, editorId, amountCents, reason, method, paidAt)
+
+AdSpend(id, orgId, campaignId, day, spendCents, impressions?, clicks?)
+
+EmailSequence(id, orgId, name, totalSteps, active)
+
+EmailEvent(id, orgId, leadId?, sequenceId?, kind, happenedAt, meta) // kind: OPT_IN | FIRST_EMAIL_SENT | STEP_SENT | OPEN | CLICK
+
+OnboardingEvent(id, orgId, leadId, kind, happenedAt, meta) // kickoff_call, form_submitted, workspace_invited …
+
+Add helpful indexes (orgId + date fields) and enums. Include createdAt/updatedAt defaults.
+
+4) Seed script
+
+Create realistic dummy data (~100 leads, 40 orders, 120 payments incl. plans/overdues, 20 content items, 12 campaigns with buckets, daily ad spend for last 90 days, email sequences/events, onboarding events, 5 contractors with weekly payouts, etc.). Make sure:
+
+Some orders are High-ticket vs Deposit products.
+
+Some payment plan installments are overdue.
+
+Leads have first UTM tags populated.
+
+Orders attach to campaigns for ROAS.
+
+Email events include OPT_IN and FIRST_EMAIL_SENT so we can compute timing.
+
+5) API (Express, versioned /api/v1)
+
+Add Zod validation for all query/body payloads. All endpoints require auth; role gates are noted.
+
+Common
+
+GET /me (profile + role)
+
+GET /health
+
+Sales/Revenue (SALES + ADMIN)
+
+GET /sales/summary?from&to → KPIs: total cash collected, AOV, orders won, high-ticket vs deposit totals, outstanding plans, overdue amount.
+
+GET /sales/cash-by-source?from&to → daily series grouped by source (SDR Outbound / Webinar / IG DM / Ads) via orders+payments; include a leads table with first UTM columns.
+
+GET /sales/overdues?from&to → table of overdue installments (lead, due date, days overdue, amount).
+
+GET /sales/orders?from&to&status → paginated orders.
+
+Extra metrics: Win rate, New customers, Refund rate, MRR (if subscriptions exist).
+
+Marketing/Content (MARKETING + ADMIN)
+
+GET /content/summary?from&to → produced this week, in revision, pipeline/scheduled counts.
+
+GET /content/items?status&from&to → table.
+
+GET /content/contractor-spend?from&to → weekly spend by editor (grouped).
+
+Extra: Avg turnaround time (produced → published), Editor utilization.
+
+Ad Spend (MARKETING + ADMIN)
+
+GET /ads/spend-by-campaign?from&to → grouped by bucket (webinar cold, webinar retarget, follower ads).
+
+GET /ads/roas-by-bucket?from&to → revenue (payments linked to orders→campaign→bucket) / spend.
+
+Extra: CPC/CTR (if clicks/impressions exist), Cost per lead (join to leads), CAC (rough).
+
+Fulfillment / Client Success (CSM + ADMIN)
+
+GET /csm/summary?from&to → total owed (active plans), overdue amount, onboarding compliance %, count of high-risk clients.
+
+GET /csm/red-zone?from&to → list of high-risk clients (rules: overdue > $X OR 2+ missed payments OR onboarding not completed in 14 days).
+
+GET /csm/payment-plans?status → active/completed/defaulted with next due dates.
+
+Extra: Churn risk score per client (simple heuristic), NPS stub.
+
+Email (MARKETING + ADMIN)
+
+GET /email/nurture-status?from&to → latest step reached per lead/sequence.
+
+GET /email/optin-to-first?from&to → average + median minutes.
+
+GET /email/sequences → list + performance (starts, step drop-offs, open/click rates).
+
+Extra: Open rate trend, Click-through trend.
+
+Provide pagination, sorting, CSV export on all “table” endpoints via query flags.
+
+6) Metric calculations (server side)
+
+Implement with Prisma and SQL:
+
+Cash collected by source: sum settled payments joined to orders grouped by orders.source (from first-touch UTM mapped to SDR_OUTBOUND/WEBINAR/IG_DM/ADS).
+
+High-ticket vs deposits: group revenue by Product.kind.
+
+Outstanding / Overdue: sum of (amountCents - paidCents) on PaymentPlanSchedule, overdue where dueAt < now() and status in (DUE, PARTIAL).
+
+AOV: SUM(orders.totalCents WHERE status='WON') / COUNT(WON orders).
+
+ROAS per bucket: revenue from payments on orders with campaign.bucket / AdSpend.spendCents.
+
+Onboarding compliance %: new clients within range who completed required events / total new clients.
+
+7) Frontend (Vue)
+
+Global layout with left sidebar (“Sales”, “CSM”, “Operations/Marketing”, “Settings”), top header (“Welcome back, {name}”).
+
+Each section has:
+
+A KPI row of cards.
+
+A chart (ApexCharts) for the main time series.
+
+One or more tables with filters (search, date, status) + CSV export.
+
+Include a role switcher banner in the seed build to preview each role.
+
+Pages:
+
+/sales (dashboard view) + subpages /sales/orders, /sales/overdues, /sales/leads
+
+/marketing (content + ads combined): tabs Content and Ads
+
+/csm (fulfillment overview + red zone table)
+
+/email (nurture pipeline + timing)
+
+/settings (profile, API keys placeholder)
+
+Reusable components: KpiCard.vue, TimeSeriesChart.vue, DataTable.vue, RoleGuard.vue, DateRangePicker.vue, ExportCsvButton.vue.
+
+8) Security & quality
+
+Input validation with Zod on all API endpoints.
+
+Helmet, rate-limit basic (per IP) middleware.
+
+Central error handler returning consistent JSON.
+
+Basic unit tests for calculation utilities and guards.
+
+Seeded demo login credentials displayed on the login page (for quick testing).
+
+9) Environment & scripts
+
+Create .env.example:
+
+DATABASE_URL="postgresql://user:pass@host/db?sslmode=require"
+JWT_SECRET="change-me"
+PORT=4000
+
+
+README with:
+
+pnpm install
+
+pnpm prisma:migrate
+
+pnpm prisma:seed
+
+pnpm dev (concurrently runs API and Web)
+
+How to point to Neon: set DATABASE_URL and re-run migrate.
+
+10) Acceptance criteria
+
+App boots with dummy data and shows real numbers in every KPI, chart, and table.
+
+Auth & RBAC enforced on both API and UI.
+
+CSV export works for main tables.
+
+Date filters drive charts and KPIs.
+
+The UI resembles the provided screenshots (tiles, tables, sidebar).
+
+Code is clean, typed, and organized; Prisma schema and seed included.
+
+Deliver everything as a working repo with clear instructions.

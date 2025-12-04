@@ -1,0 +1,266 @@
+General Context
+Keep the top cards exactly as they are.
+ We’ll focus on improving the students table and adding a popup (modal) for editing each student’s details.
+ All existing data should be pre-filled from the current database (or mock data for now).
+ Edits will be saved later when we hook up the backend — for now, just make the UI consistent, clean, and easy to extend.
+
+Main Flow
+Each student row in the table gets an View Student button.
+ Clicking it opens a popup for that student.
+At the top of the popup, there’s a toggle bar (like segmented buttons) with five sections:
+Personal Info (default)
+
+
+Onboarding
+
+
+Payment Tracking
+
+
+Progress Tracking
+
+
+Student Checkin
+
+
+Switching between sections updates the view inside the same popup.
+
+Section Details
+1. Personal Info (default tab)
+This section shows and allows editing of:
+Name
+
+
+Email
+
+
+Start Date
+
+
+End Date
+
+
+Status: 3 checkboxes (Active, Inactive, Pause) — only one can be checked at a time
+
+
+If “Pause” is checked, show two date fields: Pause Start Date and Pause End Date
+
+
+CSM: dropdown with values from the team_members table, where role is CSM and is_active is TRUE
+
+
+Referral: checkbox (default unchecked)
+
+
+Program: dropdown
+
+
+Progress tracker sheet: field(s) for one or more links
+
+
+Notes: text area for writing comments or updates
+
+
+Save button to save all fields (pre-filled from current data)
+
+
+
+2. Onboarding
+This section has checkboxes for the student’s onboarding tasks.
+Each one can be toggled on/off.
+ When a box is checked or unchecked, it should instantly update the state (later the database).
+ For now, just make it update the mock data so it feels live.
+Checklist items:
+OB Calls Completed
+
+
+Slack profile setup
+
+
+Kajabi access granted
+
+
+Invited to relevant Slack channels
+
+
+Introduction video/message posted
+
+
+Access to AST calendar
+
+
+Asked about main goals
+
+
+Posted in mock calls channel
+
+
+Posted in wins channel
+
+
+Posted in mind & body channel
+
+
+Asked for 5 referrals
+
+
+Booked the first 2 one-on-one calls during the onboarding week
+
+
+Each change should be reflected immediately in the UI.
+
+
+3. Payment Tracking
+This section manages how the student is paying.
+Fields:
+Program Price
+
+
+Total Paid
+
+
+Plan Type (dropdown: PIF or Split Pay)
+
+
+If Split Pay is selected, show an Installments dropdown (values 2–5).
+ When the number of installments is chosen, create that many rows, each with:
+Payment Due Date
+
+
+Payment Amount
+
+
+Example:
+ If “Split Pay” and “3 Installments” are selected → show:
+First Payment Due Date / Amount
+
+
+Second Payment Due Date / Amount
+
+
+Third Payment Due Date / Amount
+
+
+Add a Save button to store this info later (for now, just mock the save).
+
+4. Progress Tracking
+Split this section visually into two parts:
+On the left, a scrollable list/table of all weeks, showing:
+
+
+Week number
+
+
+Outcome
+
+
+A button “View Week”
+
+
+On the right, show details for the selected week:
+
+
+Outcome (dropdown: Satisfied / Needs Attention / Risk of Refund)
+
+
+Notes (text area)
+
+
+A checklist (if any) for that week
+
+
+A Save button
+
+
+The user should be able to navigate through weeks and update outcomes/notes.
+
+5. Student Checkin
+A table for student check-ins submitted by the student, showing:
+Date
+
+
+Name
+
+
+Email
+
+
+Outcome
+
+
+“View Full Response” button
+
+
+Clicking that button opens another popup (on top of the existing one).
+ This smaller popup shows:
+The full written response
+
+
+A dropdown for selecting an outcome:
+
+
+Satisfied
+
+
+Unsatisfied
+
+
+Needs Attention
+
+
+Refund Risk
+
+
+A Submit button to save that choice (mocked for now)
+
+
+When the user saves, the outcome should update in the table.
+
+Design Guidelines
+Keep the design clean, consistent, and minimal
+
+
+Use clear spacing and readable typography
+
+
+All modals and popups should be responsive and keyboard accessible
+
+
+Make sure toggles and dropdowns feel smooth and intuitive
+
+
+Use consistent date pickers and checkbox styling
+
+
+Show success toasts or small “Saved” messages after saving
+
+
+
+Behavior Summary
+Personal Info: changes saved when “Save” is clicked
+
+
+Onboarding: changes saved automatically when toggled
+
+
+Payment Tracking: saved when “Save” is clicked
+
+
+Progress Tracking: saved when “Save” is clicked
+
+
+Check-ins: outcome saved when “Submit” is clicked
+
+
+
+Before Starting
+Review the git history to make sure recent manual edits aren’t overwritten.
+
+
+Keep code clean and isolated to just the CSM page for now.
+
+
+No backend calls yet — use local mock data or a simple state object.
+
+
+Keep the top summary cards untouched.

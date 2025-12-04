@@ -1,0 +1,360 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// CORE & AUTH
+// ==========================================
+
+enum UserRole {
+  ADMIN
+  SALES
+  MARKETING
+  CSM
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  role         UserRole
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  managedEnrollments Enrollment[] @relation("CSM")
+
+  @@map("users")
+}
+
+enum TeamMemberRole {
+  CLOSER
+  SETTER
+  DM_SETTER
+}
+
+model TeamMember {
+  id        Int            @id @default(autoincrement())
+  firstName String         @map("first_name")
+  lastName  String         @map("last_name")
+  role      TeamMemberRole
+  active    Boolean        @default(true)
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  // Relationships
+  closedEnrollments Enrollment[]  @relation("Closer")
+  setEnrollments    Enrollment[]  @relation("Setter")
+  hostedCalls       SalesCall[]   @relation("Host")
+  setCalls          SalesCall[]   @relation("Setter")
+  dailyMetrics      DailyMetric[]
+
+  @@map("team_members")
+}
+
+// ==========================================
+// CRM & SALES
+// ==========================================
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  LOST
+}
+
+model Lead {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  firstName String?    @map("first_name")
+  lastName  String?    @map("last_name")
+  phone     String?
+  source    String?
+  campaign  String?
+  medium    String?
+  term      String?
+  status    LeadStatus @default(NEW)
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  // Relationships
+  salesCalls SalesCall[]
+
+  @@map("leads")
+}
+
+model Student {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @unique @map("user_id") // Optional link if they have login
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  email     String   @unique
+  phone     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  enrollments Enrollment[]
+  salesCalls  SalesCall[]
+
+  @@map("students")
+}
+
+model Program {
+  id        Int      @id @default(autoincrement())
+  name      String
+  price     Decimal  @db.Decimal(10, 2)
+  active    Boolean  @default(true)
+  stripeId  String?  @map("stripe_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  enrollments Enrollment[]
+
+  @@map("programs")
+}
+
+enum PaymentPlanType {
+  PIF
+  SPLIT
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  DROPPED
+}
+
+model Enrollment {
+  id            Int              @id @default(autoincrement())
+  studentId     Int              @map("student_id")
+  programId     Int              @map("program_id")
+  status        EnrollmentStatus @default(ACTIVE)
+  planType      PaymentPlanType  @default(PIF) @map("plan_type")
+  contractValue Decimal          @default(0) @map("contract_value") @db.Decimal(10, 2)
+  startDate     DateTime         @default(now()) @map("start_date")
+  endDate       DateTime?        @map("end_date")
+  notes         String?
+  progressTrackerSheet String?   @map("progress_tracker_sheet")
+
+  // Assignments
+  csmId    Int? @map("csm_id")
+  closerId Int? @map("closer_id")
+  setterId Int? @map("setter_id")
+
+  // Relationships
+  student      Student          @relation(fields: [studentId], references: [id])
+  program      Program          @relation(fields: [programId], references: [id])
+  csm          User?            @relation("CSM", fields: [csmId], references: [id])
+  closer       TeamMember?      @relation("Closer", fields: [closerId], references: [id])
+  setter       TeamMember?      @relation("Setter", fields: [setterId], references: [id])
+  payments     Payment[]
+  installments Installment[]
+  onboarding   OnboardingState?
+  progress     WeeklyProgress[]
+  checkIns     CheckIn[]
+
+  @@map("enrollments")
+}
+
+enum CallStatus {
+  SCHEDULED
+  COMPLETED
+  NO_SHOW
+  CANCELED
+}
+
+model SalesCall {
+  id        Int        @id @default(autoincrement())
+  leadId    Int?       @map("lead_id")
+  studentId Int?       @map("student_id")
+  hostId    Int        @map("host_id")
+  setterId  Int?       @map("setter_id")
+  startTime DateTime   @map("start_time")
+  endTime   DateTime   @map("end_time")
+  status    CallStatus @default(SCHEDULED)
+  outcome   String?
+
+  // Relationships
+  lead    Lead?       @relation(fields: [leadId], references: [id])
+  student Student?    @relation(fields: [studentId], references: [id])
+  host    TeamMember  @relation("Host", fields: [hostId], references: [id])
+  setter  TeamMember? @relation("Setter", fields: [setterId], references: [id])
+
+  @@map("sales_calls")
+}
+
+// ==========================================
+// FINANCE
+// ==========================================
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id           Int           @id @default(autoincrement())
+  enrollmentId Int           @map("enrollment_id")
+  amount       Decimal       @db.Decimal(10, 2)
+  date         DateTime
+  status       PaymentStatus @default(PENDING)
+  method       String? // stripe, paypal, wire
+  processorId  String?       @map("processor_id") // stripe payment intent id
+  email        String?       // For matching payments to students
+
+  // Relationships
+  enrollment  Enrollment   @relation(fields: [enrollmentId], references: [id])
+  installment Installment?
+
+  @@map("payments")
+}
+
+enum InstallmentStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+model Installment {
+  id           Int               @id @default(autoincrement())
+  enrollmentId Int               @map("enrollment_id")
+  paymentId    Int?              @unique @map("payment_id") // Link when paid
+  dueDate      DateTime          @map("due_date")
+  amount       Decimal           @db.Decimal(10, 2)
+  status       InstallmentStatus @default(PENDING)
+
+  // Relationships
+  payment    Payment?   @relation(fields: [paymentId], references: [id])
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
+
+  @@map("installments")
+}
+
+// ==========================================
+// OPERATIONS / CSM
+// ==========================================
+
+model OnboardingState {
+  id             Int     @id @default(autoincrement())
+  enrollmentId   Int     @unique @map("enrollment_id")
+  callCompleted  Boolean @default(false) @map("call_completed")
+  slackJoined    Boolean @default(false) @map("slack_joined")
+  courseAccess   Boolean @default(false) @map("course_access")
+  communityIntro Boolean @default(false) @map("community_intro")
+  goalsSet       Boolean @default(false) @map("goals_set")
+  referralsAsked Boolean @default(false) @map("referrals_asked")
+
+  // Relationships
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
+
+  @@map("onboarding_states")
+}
+
+model WeeklyProgress {
+  id               Int     @id @default(autoincrement())
+  enrollmentId     Int     @map("enrollment_id")
+  weekNumber       Int     @map("week_number")
+  attendedTraining Boolean @default(false) @map("attended_training")
+  completedModules Boolean @default(false) @map("completed_modules")
+  notes            String?
+  outcome          String?
+
+  // Relationships
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
+
+  @@map("weekly_progress")
+}
+
+model CheckIn {
+  id           Int      @id @default(autoincrement())
+  enrollmentId Int      @map("enrollment_id")
+  date         DateTime @default(now())
+  wins         String?
+  challenges   String?
+  satisfaction Int? // 1-10
+  feedback     String?
+
+  // Relationships
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
+
+  @@map("check_ins")
+}
+
+// ==========================================
+// MARKETING & REPORTING
+// ==========================================
+
+model DailyMetric {
+  id            Int      @id @default(autoincrement())
+  teamMemberId  Int      @map("team_member_id")
+  date          DateTime
+  calls         Int      @default(0)
+  conversations Int      @default(0)
+  booked        Int      @default(0)
+  offers        Int      @default(0)
+  closes        Int      @default(0)
+  cash          Decimal  @default(0) @db.Decimal(10, 2)
+  notes         String?
+
+  // Relationships
+  teamMember TeamMember @relation(fields: [teamMemberId], references: [id])
+
+  @@map("daily_metrics")
+}
+
+enum AdStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+model AdCampaign {
+  id        Int      @id @default(autoincrement())
+  name      String
+  platform  String // facebook, google, tiktok
+  status    AdStatus @default(ACTIVE)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  performance AdPerformance[]
+
+  @@map("ad_campaigns")
+}
+
+model AdPerformance {
+  id          Int      @id @default(autoincrement())
+  campaignId  Int      @map("campaign_id")
+  date        DateTime
+  spend       Decimal  @default(0) @db.Decimal(10, 2)
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  leads       Int      @default(0)
+  purchases   Int      @default(0)
+  revenue     Decimal  @default(0) @db.Decimal(10, 2)
+
+  // Relationships
+  campaign AdCampaign @relation(fields: [campaignId], references: [id])
+
+  @@map("ad_performance")
+}
+
+// Email Marketing (Simplified)
+model EmailBroadcast {
+  id              Int      @id @default(autoincrement())
+  subject         String
+  sentAt          DateTime @map("sent_at")
+  recipientsCount Int      @map("recipients_count")
+  openRate        Decimal  @map("open_rate") @db.Decimal(5, 2)
+  clickRate       Decimal  @map("click_rate") @db.Decimal(5, 2)
+
+  @@map("email_broadcasts")
+}

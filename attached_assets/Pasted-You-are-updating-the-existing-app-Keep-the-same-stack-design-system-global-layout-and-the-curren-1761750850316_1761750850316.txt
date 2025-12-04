@@ -1,0 +1,830 @@
+You are updating the existing app. Keep the same stack, design system, global layout, and the current Date Filter UI. Only change the schema (I’ll paste it), backend (routes/services), and the Homepage & Sales pages. Timezone for all server-side date math is Europe/Bucharest.
+0) Use my Prisma schema (placeholder below)
+Replace the current Prisma schema with exactly what I paste into the placeholder below; do not modify field names.
+
+
+// This is your Prisma schema file
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== TABLES ====================
+
+model Student {
+  id                      Int       @id @default(autoincrement())
+  name                    String    @db.VarChar(255)
+  email                   String    @unique @db.VarChar(255)
+  startDate               DateTime? @map("start_date") @db.Date
+  endDate                 DateTime? @map("end_date") @db.Date
+  csm                     String?   @db.VarChar(255)
+  totalPaid               Decimal?  @default(0.00) @map("total_paid") @db.Decimal(10, 2)
+  onboardingCall          Boolean   @default(false) @map("onboarding_call")
+  oneOnOne                Boolean   @default(false) @map("one_on_one")
+  wentThroughCourse       Boolean   @default(false) @map("went_through_course")
+  mocks20Done             Boolean   @default(false) @map("mocks_20_done")
+  applied5Roles           Boolean   @default(false) @map("applied_5_roles")
+  secoredInterview        Boolean   @default(false) @map("secored_interview")
+  securedRole             Boolean   @default(false) @map("secured_role")
+  active                  Boolean   @default(true)
+  weeklyCallsLimit        Int?      @default(0) @map("weekly_calls_limit")
+  tags                    String?   @db.Text
+  notes                   String?   @db.Text
+  progressTrackerSheet    String?   @map("progress_tracker_sheet") @db.VarChar(500)
+  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at")
+  planType                String?   @map("plan_type") @db.VarChar(255)
+  installments            Int?      @default(1)
+  installmentValue        Decimal?  @map("installment_value") @db.Decimal(10, 2)
+  nextPaymentDueDate      DateTime? @map("next_payment_due_date") @db.Date
+  programPrice            Decimal?  @map("program_price") @db.Decimal(10, 2)
+
+  @@map("students")
+}
+
+model Lead {
+  leadId                  Int       @id @default(autoincrement()) @map("lead_id")
+  email                   String    @db.VarChar(255)
+  firstName               String?   @map("first_name") @db.VarChar(100)
+  lastName                String?   @map("last_name") @db.VarChar(100)
+  phone                   String?   @db.VarChar(20)
+  capturedAt              DateTime  @default(now()) @map("captured_at")
+  utmSource               String?   @map("utm_source") @db.VarChar(255)
+  utmMedium               String?   @map("utm_medium") @db.VarChar(255)
+  utmCampaign             String?   @map("utm_campaign") @db.VarChar(255)
+  utmContent              String?   @map("utm_content") @db.VarChar(255)
+  utmTerm                 String?   @map("utm_term") @db.VarChar(255)
+  source                  String?   @db.VarChar(100)
+
+  @@map("leads")
+}
+
+model Payment {
+  paymentId               String    @id @map("payment_id") @db.VarChar(100)
+  email                   String    @db.VarChar(255)
+  totalAmount             Decimal   @map("total_amount") @db.Decimal(10, 2)
+  netAmount               Decimal   @map("net_amount") @db.Decimal(10, 2)
+  paidAt                  DateTime  @map("paid_at")
+  paymentProcessor        String?   @map("payment_processor") @db.VarChar(50)
+  paymentMethod           String?   @map("payment_method") @db.VarChar(50)
+  utmSource               String?   @map("utm_source") @db.VarChar(255)
+  utmMedium               String?   @map("utm_medium") @db.VarChar(255)
+  utmCampaign             String?   @map("utm_campaign") @db.VarChar(255)
+  assignedSetter          Int?      @map("assigned_setter")
+  assignedCloser          Int?      @map("assigned_closer")
+  assignedSource          String?   @map("assigned_source") @db.VarChar(50)
+  productId               Int?      @map("product_id")
+
+  @@map("payments")
+}
+
+model Product {
+  productId               Int       @id @default(autoincrement()) @map("product_id")
+  productName             String    @map("product_name") @db.VarChar(255)
+  productType             String?   @map("product_type") @db.VarChar(100)
+  price                   Decimal   @db.Decimal(10, 2)
+  active                  Boolean   @default(true)
+  createdAt               DateTime  @default(now()) @map("created_at")
+  stripeId                String?   @unique @map("stripe_id") @db.VarChar(255)
+
+  @@map("products")
+}
+
+model BookedCall {
+  callId                  String    @id @map("call_id") @db.VarChar(100)
+  email                   String    @db.VarChar(255)
+  eventCreated            DateTime  @default(now()) @map("event_created")
+  eventStartDate          DateTime  @map("event_start_date")
+  eventEndDate            DateTime  @map("event_end_date")
+  leadName                String?   @map("lead_name") @db.VarChar(255)
+  leadEmail               String?   @map("lead_email") @db.VarChar(255)
+  hostName                String?   @map("host_name") @db.VarChar(255)
+  hostEmail               String?   @map("host_email") @db.VarChar(255)
+  hostCalendlyUri         String?   @map("host_calendly_uri") @db.VarChar(500)
+  eventUri                String?   @map("event_uri") @db.VarChar(500)
+  eventTypeUri            String?   @map("event_type_uri") @db.VarChar(500)
+  utmSource               String?   @map("utm_source") @db.VarChar(255)
+  utmMedium               String?   @map("utm_medium") @db.VarChar(255)
+  utmCampaign             String?   @map("utm_campaign") @db.VarChar(255)
+  utmContent              String?   @map("utm_content") @db.VarChar(255)
+  utmTerm                 String?   @map("utm_term") @db.VarChar(255)
+  cancelled               Boolean   @default(false)
+  reminder24hSent         Boolean   @default(false) @map("24h_reminder_sent")
+  reminder1hSent          Boolean   @default(false) @map("1h_reminder_sent")
+  joinUrl                 String?   @map("join_url") @db.VarChar(500)
+  leadTimezone            String?   @map("lead_timezone") @db.VarChar(100)
+  eventName               String?   @map("event_name") @db.VarChar(255)
+  setter                  String?   @db.VarChar(255)
+
+  @@map("booked_calls")
+}
+
+model AdPerformance {
+  performanceId           Int       @id @default(autoincrement()) @map("performance_id")
+  campaignId              String    @map("campaign_id") @db.VarChar(100)
+  adSetId                 String    @map("ad_set_id") @db.VarChar(100)
+  creativeId              String    @map("creative_id") @db.VarChar(100)
+  date                    DateTime  @db.Date
+  adSpend                 Decimal?  @default(0.00) @map("ad_spend") @db.Decimal(10, 2)
+  impressions             Int?      @default(0)
+  clicks                  Int?      @default(0)
+  leadsCaptured           Int?      @default(0) @map("leads_captured")
+  ctr                     Decimal?  @db.Decimal(5, 2)
+  cpc                     Decimal?  @db.Decimal(10, 2)
+  cpl                     Decimal?  @db.Decimal(10, 2)
+  conversions             Int?      @default(0)
+  revenueAttributed       Decimal?  @default(0.00) @map("revenue_attributed") @db.Decimal(10, 2)
+
+  @@map("ad_performance")
+}
+
+model Contractor {
+  contractorId            Int       @id @default(autoincrement()) @map("contractor_id")
+  email                   String    @unique @db.VarChar(255)
+  firstName               String    @map("first_name") @db.VarChar(100)
+  lastName                String    @map("last_name") @db.VarChar(100)
+  contractorType          String?   @map("contractor_type") @db.VarChar(100)
+  ratePerPiece            Decimal?  @default(0.00) @map("rate_per_piece") @db.Decimal(10, 2)
+  totalPiecesDelivered    Int?      @default(0) @map("total_pieces_delivered")
+  totalPaid               Decimal?  @default(0.00) @map("total_paid") @db.Decimal(10, 2)
+  status                  String?   @default("ACTIVE") @db.VarChar(50)
+  startDate               DateTime? @map("start_date") @db.Date
+
+  @@map("contractors")
+}
+
+model TeamMember {
+  id                      Int       @id @default(autoincrement())
+  firstName               String    @map("first_name") @db.VarChar(100)
+  lastName                String    @map("last_name") @db.VarChar(100)
+  personalEmail           String?   @unique @map("personal_email") @db.VarChar(255)
+  companyEmail            String?   @unique @map("company_email") @db.VarChar(255)
+  crmUserId               String?   @unique @map("crm_user_id") @db.VarChar(100)
+  slackUserId             String?   @unique @map("slack_user_id") @db.VarChar(100)
+  role                    String?   @db.VarChar(100)
+  createdAt               DateTime  @default(now()) @map("created_at")
+  isActive                Boolean   @default(true) @map("is_active")
+  commission              Decimal?  @default(0.00) @db.Decimal(5, 2)
+
+  @@map("team_members")
+}
+
+model Refund {
+  refundId                String    @id @map("refund_id") @db.VarChar(100)
+  refundAmount            Decimal   @map("refund_amount") @db.Decimal(10, 2)
+  refundDate              DateTime  @map("refund_date") @db.Date
+  refundReason            String?   @map("refund_reason") @db.Text
+  processedBy             String?   @map("processed_by") @db.VarChar(255)
+  status                  String?   @default("PENDING") @db.VarChar(50)
+  email                   String    @db.VarChar(225)
+
+  @@map("refunds")
+}
+
+// ==================== VIEWS (Read-Only) ====================
+// These are database views, not tables. Prisma can query them but cannot create/update/delete
+// Note: Views don't have primary keys in the database, but Prisma requires an @id field
+// You may need to add a unique identifier or composite key based on your view's actual structure
+
+/// This model represents a database view, not a table
+/// Composite key used since views don't have primary keys
+model DailyClosersStats {
+  day                     DateTime  @db.Date
+  closerFormatted         String    @map("closer_formatted") @db.VarChar(255)
+  totalBookedCalls        Int?      @default(0) @map("total_booked_calls")
+  callsOnCalendar         Int?      @default(0) @map("calls_on_calendar")
+  liveCalls               Int?      @default(0) @map("live_calls")
+  offersMade              Int?      @default(0) @map("offers_made")
+  deposits                Int?      @default(0)
+  closes                  Int?      @default(0)
+  totalAmountCashCollected Decimal? @default(0.00) @map("total_amount_cash_collected") @db.Decimal(10, 2)
+  netAmountCashCollected  Decimal?  @default(0.00) @map("net_amount_cash_collected") @db.Decimal(10, 2)
+  daysCurrentMonth        Int?      @default(0) @map("days_current_month")
+  revenue                 Decimal?  @default(0.00) @db.Decimal(10, 2)
+
+  @@id([day, closerFormatted])
+  @@map("analytics.rpt_daily_closers_stats")
+}
+
+/// This model represents a database view, not a table
+/// Composite key used since views don't have primary keys
+model DailySettersStats {
+  day                     DateTime  @db.Date
+  setterFormatted         String    @map("setter_formatted") @db.VarChar(255)
+  bookedCalls             Int?      @default(0) @map("booked_calls")
+  callsMade               Int?      @default(0) @map("calls_made")
+  pickUps                 Int?      @default(0) @map("pick_ups")
+  reschedules             Int?      @default(0)
+  noShows                 Int?      @default(0) @map("no_shows")
+  unqualifiedLeads        Int?      @default(0) @map("unqualified_leads")
+  smsEmailsSent           Int?      @default(0) @map("sms_emails_sent")
+  closedWon               Int?      @default(0) @map("closed_won")
+  totalAmountCashCollected Decimal? @default(0.00) @map("total_amount_cash_collected") @db.Decimal(10, 2)
+  netAmountCashCollected  Decimal?  @default(0.00) @map("net_amount_cash_collected") @db.Decimal(10, 2)
+  daysCurrentMonth        Int?      @default(0) @map("days_current_month")
+
+  @@id([day, setterFormatted])
+  @@map("analytics.rpt_daily_setters_stats")
+}
+
+/// This model represents a database view, not a table
+model DailyDmSettersStats {
+  id                      Int       @id @default(autoincrement())
+  day                     DateTime  @db.Date
+  setterFormatted         String    @map("setter_formatted") @db.VarChar(255)
+  newOutboundConvos       Int?      @default(0) @map("new_outbound_convos")
+  outboundResponses       Int?      @default(0) @map("outbound_responses")
+  newInboundConvos        Int?      @default(0) @map("new_inbound_convos")
+  followUps               Int?      @default(0) @map("follow_ups")
+  callsProposed           Int?      @default(0) @map("calls_proposed")
+  linksSent               Int?      @default(0) @map("links_sent")
+  totalCallsBooked        Int?      @default(0) @map("total_calls_booked")
+  qualifiedCallsBooked    Int?      @default(0) @map("qualified_calls_booked")
+  setsScheduledToday      Int?      @default(0) @map("sets_scheduled_today")
+  setsTakenToday          Int?      @default(0) @map("sets_taken_today")
+  setsClosedToday         Int?      @default(0) @map("sets_closed_today")
+  revenueGenerated        Decimal?  @default(0.00) @map("revenue_generated") @db.Decimal(10, 2)
+  newCashCollected        Decimal?  @default(0.00) @map("new_cash_collected") @db.Decimal(10, 2)
+  recurringCashCollected  Decimal?  @default(0.00) @map("recurring_cash_collected") @db.Decimal(10, 2)
+  hoursWorkedToday        Decimal?  @default(0.00) @map("hours_worked_today") @db.Decimal(5, 2)
+  performance             String?   @db.VarChar(50)
+  closedWon               Int?      @default(0) @map("closed_won")
+  totalAmountCashCollected Decimal? @default(0.00) @map("total_amount_cash_collected") @db.Decimal(10, 2)
+  netAmountCashCollected  Decimal?  @default(0.00) @map("net_amount_cash_collected") @db.Decimal(10, 2)
+  daysCurrentMonth        Int?      @default(0) @map("days_current_month")
+
+  @@map("analytics.rpt_daily_dm_setters_stats")
+}
+
+
+
+1) Repository structure (modular & debuggable)
+Keep my current tech stack and styling, but organize code for clarity:
+/server
+  /db            # Prisma client init, connection, migrations
+  /repos         # Thin data-access (Prisma-only, no business logic)
+  /services      # All metric calculators (pure, testable)
+  /routes        # HTTP handlers only; call services
+  /utils         # date/tz helpers (Europe/Bucharest), validation, number fmt
+  /types         # API response types
+  index.ts
+/web
+  /features
+    /home        # Homepage feature (cards, chart, table)
+    /sales       # Sales feature (top cards, tabs, member dropdowns)
+  /components    # Card, KPI, Chart, Table, Toggle/Tab, Dropdown
+  /lib           # API client/fetchers, schema validators (zod)
+  /pages         # Route files (if applicable)
+  /types
+
+
+
+
+DX:
+Environment-driven DB config.
+
+
+Input validation with zod (dates, role, member).
+
+
+Unit tests for services (metric math).
+
+
+Lightweight seed if you already have one.
+
+
+Error boundaries/logging; never crash the UI on partial data.
+
+
+2) Fewer routes (batch by page) — decision & why
+Decision: Use aggregated page-level endpoints (Home summary, Sales summary, Sales drilldowns), not one route per metric.
+Why:
+Cuts network chatter and loading jank.
+
+
+Centralizes date/tz & caching.
+
+
+Easier to evolve metrics without breaking the UI.
+
+
+Complex joins/ratios live in services, keeping routes thin.
+
+
+Rules:
+from and to are inclusive, interpreted in Europe/Bucharest.
+
+
+Default range: WTD if missing.
+
+
+member filters by display name derived from TeamMember (see mapping below).
+
+
+3) Team member dropdowns (by role) only on Sales section
+Populate dropdowns from TeamMember where role ∈ ['closer','setter','dm_setter'] and isActive = true.
+
+
+Display name: firstName + ' ' + lastName. Send this as the member query param.
+
+
+When filtering views (Daily*Stats) by member, match closerFormatted/setterFormatted to that display name. If there’s drift, allow fallback matching by companyEmail/personalEmail when present in the view; otherwise exact name match.
+
+
+4) Homepage — metrics (how to compute)
+All metrics respect [from, to] in Europe/Bucharest. Use Prisma and aggregate in SQL when possible; final ratios are computed in services.
+Cards
+Sales: Net Revenue (CC)
+
+
+Source: Payment
+
+
+Formula: sum(netAmount) where paidAt BETWEEN from AND to.
+
+
+Sales: New Customers
+
+
+Source: Student
+
+
+Formula: count(DISTINCT email) where startDate BETWEEN from AND to.
+
+
+Sales: Closed-Won Revenue
+
+
+Source: Student
+
+
+Formula: sum(programPrice) where startDate BETWEEN from AND to AND programPrice > 0.
+
+
+Marketing: Leads Captured
+
+
+Source: Lead
+
+
+Formula: count(DISTINCT email) where capturedAt BETWEEN from AND to.
+
+
+Marketing: Ad Spend
+
+
+Source: AdPerformance
+
+
+Field: adSpend
+
+
+Formula: sum(adSpend) where date BETWEEN from AND to.
+
+
+Content: Content Views
+
+
+Not in schema. Return { amount: 0, implemented: false } (leave a TODO hook).
+
+
+CSM: Overdue Payments
+
+
+No invoices table provided; approximate using students with remaining balance & past due date:
+
+
+Remaining balance per student = programPrice - totalPaid (treat nulls as 0).
+
+
+Overdue conditions (best-effort until AR tables exist):
+
+
+nextPaymentDueDate < now() AND programPrice > totalPaid.
+
+
+Return { count: N, total: SUM(remainingBalance) }. If fields missing → { count: 0, total: 0, implemented: false }.
+
+
+CMS: Refunds
+
+
+Source: Refund
+
+
+Formula: sum(refundAmount) where refundDate BETWEEN from AND to.
+
+
+Email: ?
+
+
+No source in schema → { implemented: false }.
+
+
+Graph — Cash Collected by Source
+Source: Payment
+
+
+Group by COALESCE(utmSource,'Unknown'), value = sum(netAmount) where paidAt BETWEEN from AND to.
+
+
+Table — Recent Transactions
+Source: Payment (+ optional join to Product via productId for productName)
+
+
+Columns:
+
+
+date = paidAt
+
+
+name = (use email or infer display name if present elsewhere)
+
+
+value = netAmount
+
+
+source = utmSource (fallback assignedSource)
+
+
+lineOfBusiness = Product.productName (if joinable) or productId
+
+
+Paginate server-side.
+
+
+/api/home/summary example shape
+{
+  "range": {"from":"YYYY-MM-DD","to":"YYYY-MM-DD","tz":"Europe/Bucharest"},
+  "cards": {
+    "netRevenue": 0,
+    "newCustomers": 0,
+    "closedWonRevenue": 0,
+    "leadsCaptured": 0,
+    "adSpend": 0,
+    "contentViews": {"amount":0,"implemented":false},
+    "overduePayments": {"count":0,"total":0},
+    "refunds": {"amount":0},
+    "email": {"implemented":false}
+  },
+  "charts": {
+    "cashCollectedBySource": [
+      {"source":"Meta","amount":0}
+    ]
+  }
+}
+
+5) Sales page — layout & metrics
+Keep the Top Cards sticky. Below them, a tab/toggle: Closers | Setters | DM Setters. Each tab shows: (a) its cards, (b) a member dropdown filtered by role, (c) in-depth tables/graphs. All respect [from,to].
+Top Cards (4–6 at a glance)
+Total Booked Calls
+
+
+Source: DailyClosersStats.totalBookedCalls
+
+
+Formula: sum(totalBookedCalls) where day BETWEEN from AND to.
+
+
+Note: Calendly totals (includes cancellations), as per view.
+
+
+CC (Cash Collected)
+
+
+Source: Payment
+
+
+Formula: sum(netAmount) where paidAt BETWEEN from AND to.
+
+
+Live Calls
+
+
+Source: DailyClosersStats.liveCalls
+
+
+Formula: sum(liveCalls) in range.
+
+
+Offers Made
+
+
+Source: DailyClosersStats.offersMade
+
+
+Formula: sum(offersMade) in range.
+
+
+Show-up Rate
+
+
+Source: DailyClosersStats
+
+
+Formula: sum(liveCalls) / NULLIF(sum(callsOnCalendar),0).
+
+
+Outbound Dials
+
+
+Source: DailySettersStats.callsMade
+
+
+Formula: sum(callsMade).
+
+
+DMs Sent
+
+
+Source: DailyDmSettersStats.newOutboundConvos
+
+
+Formula: sum(newOutboundConvos).
+
+
+Pickups
+
+
+Source: DailySettersStats.pickUps
+
+
+Formula: sum(pickUps).
+
+
+Closers tab — cards & KPIs
+Offer Rate = sum(offersMade) / NULLIF(sum(liveCalls),0) from DailyClosersStats.
+
+
+Offer → Close Rate = sum(closes /* or closed_won if present */) / NULLIF(sum(offersMade),0) from DailyClosersStats.
+
+
+Use closes if that column is populated as “closed won count”; otherwise 0.
+
+
+Close Rate = sum(closes) / NULLIF(sum(liveCalls),0).
+
+
+Cash Collected / Live Call = (sum(Payment.netAmount where paidAt in range)) / NULLIF(sum(DailyClosersStats.liveCalls),0).
+
+
+If a closer filter is selected, restrict both numerators/denominators to that closer:
+
+
+Payments: filter by assignedCloser mapped to that TeamMember.id or by matching closerFormatted to the member’s display name if your data links them.
+
+
+Avg CC / Day = sum(Payment.netAmount) / number_of_days_in_selected_range.
+
+
+Company Monthly Pacing =
+
+
+cash_per_day_in_selected_range = sum(Payment.netAmount) / days_elapsed_in_range
+
+
+pacing = cash_per_day_in_selected_range * days_in_current_month.
+
+
+Closed-Won Revenue (MTD) = sum(Payment.netAmount) where paidAt BETWEEN monthStart(current) AND to.
+
+
+Closed-Won Deals (MTD) = count(*) FROM Student where startDate BETWEEN monthStart(current) AND to AND programPrice > 0.
+
+
+Demos/Calls Booked = sum(DailyClosersStats.totalBookedCalls) (show as separate tile if needed).
+
+
+In-depth tables
+Closer Performance: by closer (or filtered member)
+
+
+Columns: rep (closerFormatted), live_calls, calls_on_calendar,
+ offer_to_close_pct = closes / NULLIF(offersMade,0),
+ close_pct = closes / NULLIF(liveCalls,0),
+ cc_per_live_call = (cc_by_rep / NULLIF(liveCalls,0)),
+ cc_by_rep = sum of Payment.netAmount attributed to that closer (via assignedCloser = TeamMember.id).
+ comms = not in schema → show implemented:false or omit column.
+
+
+Payments Table: {date: paidAt, name/email, cc: netAmount, closer: assignedCloser (display), setter: assignedSetter (display)}.
+
+
+Setters tab — cards & KPIs
+Outbound Dials = sum(callsMade) from DailySettersStats.
+
+
+Pick-ups = sum(pickUps).
+
+
+Booked Calls = sum(bookedCalls).
+
+
+Reschedules = sum(reschedules).
+
+
+Closed Won = sum(closedWon).
+
+
+CC = sum(netAmountCashCollected) (or totalAmountCashCollected) from DailySettersStats. Prefer netAmountCashCollected.
+
+
+Pick Up → Booked Call % = sum(bookedCalls) / NULLIF(sum(pickUps),0).
+
+
+CC / Day = sum(netAmountCashCollected) / days_in_range.
+
+
+CC / Booked Call = sum(netAmountCashCollected) / NULLIF(sum(bookedCalls),0).
+
+
+Monthly Pacing = (sum(netAmountCashCollected) / days_elapsed_in_range) * days_in_current_month.
+
+
+In-depth
+Setter Performance Table: {rep: setterFormatted, outbound_dials: callsMade, booked_calls, pick_ups, closed_won, cc: netAmountCashCollected}.
+
+
+DM Setters tab — cards & KPIs
+DMs Outbound = sum(newOutboundConvos) from DailyDmSettersStats.
+
+
+DMs Inbound = sum(newInboundConvos).
+
+
+Booked Calls = sum(totalCallsBooked).
+
+
+Follow Ups = sum(followUps).
+
+
+Sets Taken = sum(setsTakenToday).
+
+
+Closed Won = sum(closedWon).
+
+
+CC = sum(netAmountCashCollected) if present in this view; in your schema this exists (netAmountCashCollected).
+
+
+Conversation Rate = sum(outboundResponses) / NULLIF(sum(newOutboundConvos),0).
+
+
+Booking Rate = sum(totalCallsBooked) / NULLIF(sum(outboundResponses),0).
+
+
+CC / Day = sum(netAmountCashCollected) / days_in_range.
+
+
+CC / Booked Call = sum(netAmountCashCollected) / NULLIF(sum(totalCallsBooked),0).
+
+
+In-depth
+DM Setter Performance Table: {rep: setterFormatted, dm_outbound: newOutboundConvos, dm_inbound: newInboundConvos, follow_ups: followUps, closed_won: closedWon, cc: netAmountCashCollected}.
+
+
+6) Frontend behavior (keep design & filters)
+Date Filter: keep exactly as is; wire it to the new endpoints (from, to).
+
+
+Sales Tabs: Closers / Setters / DM Setters; each has its member dropdown (from /api/team/members?role=...) that refilters KPIs and tables.
+
+
+Charts/Tables: elegantly handle implemented:false fields (show a helper tooltip).
+
+
+Loading states: skeletons/shimmers; partial failures degrade gracefully.
+
+
+7) Services (Prisma-first, ratio-safe)
+Create pure functions per endpoint inside /server/services. Pseudocode (TypeScript-ish, Prisma):
+// utils/date.ts
+export function normalizeRange(from: string, to: string, tz = 'Europe/Bucharest') {
+  // convert to Date boundaries in tz; return { fromZdt, toZdt, daysInRange, daysInMonth }
+}
+
+// services/home.ts
+export async function getHomeSummary(prisma, { from, to }) {
+  const { fromZdt, toZdt } = normalizeRange(from, to);
+
+  const [
+    netRevenue,
+    newCustomers,
+    closedWonRevenue,
+    leadsCaptured,
+    adSpend,
+    refunds
+  ] = await prisma.$transaction([
+    prisma.payment.aggregate({ where: { paidAt: { gte: fromZdt, lte: toZdt } }, _sum: { netAmount: true } }),
+    prisma.student.count({ where: { startDate: { gte: fromZdt, lte: toZdt } }, distinct: ['email'] }),
+    prisma.student.aggregate({ where: { startDate: { gte: fromZdt, lte: toZdt }, programPrice: { gt: 0 } }, _sum: { programPrice: true } }),
+    prisma.lead.count({ where: { capturedAt: { gte: fromZdt, lte: toZdt } }, distinct: ['email'] }),
+    prisma.adPerformance.aggregate({ where: { date: { gte: fromZdt, lte: toZdt } }, _sum: { adSpend: true } }),
+    prisma.refund.aggregate({ where: { refundDate: { gte: fromZdt, lte: toZdt } }, _sum: { refundAmount: true } })
+  ]);
+
+  // Cash by source
+  const cashBySource = await prisma.payment.groupBy({
+    by: ['utmSource'],
+    where: { paidAt: { gte: fromZdt, lte: toZdt } },
+    _sum: { netAmount: true }
+  });
+
+  // Overdue payments best-effort
+  const overdue = await prisma.student.findMany({
+    where: {
+      nextPaymentDueDate: { lt: new Date() },
+      AND: [{ programPrice: { gt: 0 } }]
+    },
+    select: { programPrice: true, totalPaid: true }
+  });
+  const overdueTotal = overdue.reduce((s, r) => {
+    const price = Number(r.programPrice ?? 0);
+    const paid = Number(r.totalPaid ?? 0);
+    return price > paid ? s + (price - paid) : s;
+  }, 0);
+  const overdueCount = overdue.filter(r => Number(r.programPrice ?? 0) > Number(r.totalPaid ?? 0)).length;
+
+  return {
+    cards: {
+      netRevenue: Number(netRevenue._sum.netAmount ?? 0),
+      newCustomers,
+      closedWonRevenue: Number(closedWonRevenue._sum.programPrice ?? 0),
+      leadsCaptured,
+      adSpend: Number(adSpend._sum.adSpend ?? 0),
+      contentViews: { amount: 0, implemented: false },
+      overduePayments: { count: overdueCount, total: overdueTotal },
+      refunds: { amount: Number(refunds._sum.refundAmount ?? 0) },
+      email: { implemented: false }
+    },
+    charts: {
+      cashCollectedBySource: cashBySource.map(r => ({
+        source: r.utmSource ?? 'Unknown',
+        amount: Number(r._sum.netAmount ?? 0)
+      }))
+    }
+  };
+}
+
+// services/sales.ts
+export async function getSalesSummary(prisma, { from, to, role, member }) {
+  const { fromZdt, toZdt, daysInRange, daysInMonth } = normalizeRange(from, to);
+
+  const [paymentsAgg, closersAgg, settersAgg, dmsAgg] = await prisma.$transaction([
+    prisma.payment.aggregate({ where: { paidAt: { gte: fromZdt, lte: toZdt } }, _sum: { netAmount: true } }),
+    prisma.dailyClosersStats.aggregate({
+      where: { day: { gte: fromZdt, lte: toZdt } },
+      _sum: { totalBookedCalls: true, liveCalls: true, offersMade: true, callsOnCalendar: true, closes: true }
+    }),
+    prisma.dailySettersStats.aggregate({
+      where: { day: { gte: fromZdt, lte: toZdt } },
+      _sum: { callsMade: true, pickUps: true, bookedCalls: true, reschedules: true, closedWon: true, netAmountCashCollected: true }
+    }),
+    prisma.dailyDmSettersStats.aggregate({
+      where: { day: { gte: fromZdt, lte: toZdt } },
+      _sum: { newOutboundConvos: true, newInboundConvos: true, totalCallsBooked: true, followUps: true, setsTakenToday: true, closedWon: true, netAmountCashCollected: true, outboundResponses: true }
+    })
+  ]);
+
+  const topCards = {
+    totalBookedCalls: closersAgg._sum.totalBookedCalls ?? 0,
+    cc: Number(paymentsAgg._sum.netAmount ?? 0),
+    liveCalls: closersAgg._sum.liveCalls ?? 0,
+    offersMade: closersAgg._sum.offersMade ?? 0,
+    showupRate: (closersAgg._sum.liveCalls ?? 0) / Math.max(1, (closersAgg._sum.callsOnCalendar ?? 0)),
+    outboundDials: settersAgg._sum.callsMade ?? 0,
+    dmsSent: dmsAgg._sum.newOutboundConvos ?? 0,
+    pickups: settersAgg._sum.pickUps ?? 0
+  };
+
+  // Derived by role blocks (see formulas in the prompt text)
+  // ...
+  return { topCards, byRole: {/* fill per formulas */} };
+}
+
+8) Routes (thin) & response shapes
+Implement each route in /server/routes by calling the service and returning the stable JSON shapes shown in this prompt (Home: cards, charts; Sales: topCards, byRole; Drilldowns: tables/series needed for each tab).
+9) Frontend wiring (keep design)
+Keep the current date filter and page layouts.
+
+
+Sales page: sticky Top Cards, then Tabs (Closers/Setters/DM Setters) with a member dropdown (options from /api/team/members?role=...).
+
+
+On tab change or member change, refetch the appropriate summary or drilldown endpoint.
+
+
+Charts: “Cash Collected by Source” (bar/pie), tables are paginated.
+
+
+Show graceful placeholders for { implemented:false } metrics.
+
+
+
+That’s it. Keep the app’s look & feel; just swap in my schema (I’ll paste it) and rebuild the backend + the two pages with the aggregated endpoints and exact metric formulas above.
+
