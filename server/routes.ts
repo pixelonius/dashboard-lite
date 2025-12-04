@@ -323,6 +323,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== PAYMENTS ROUTES =====
+  app.patch("/api/payments/:id/assignment", requireAuth, async (req: AuthRequest, res, next) => {
+    try {
+      const paymentId = parseInt(req.params.id);
+      if (isNaN(paymentId)) {
+        return res.status(400).json({ error: "Invalid payment ID" });
+      }
+
+      const { assignedCloserId, assignedSetterId } = updatePaymentAssignmentSchema.parse(req.body);
+
+      // Find the payment to get the enrollment
+      const payment = await prisma.payment.findUnique({
+        where: { id: paymentId },
+        include: { enrollment: true },
+      });
+
+      if (!payment) {
+        return res.status(404).json({ error: "Payment not found" });
+      }
+
+      // Update the enrollment
+      const updatedEnrollment = await prisma.enrollment.update({
+        where: { id: payment.enrollmentId },
+        data: {
+          ...(assignedCloserId !== undefined ? { closerId: assignedCloserId } : {}),
+          ...(assignedSetterId !== undefined ? { setterId: assignedSetterId } : {}),
+        },
+      });
+
+      res.json({ success: true, enrollment: updatedEnrollment });
+    } catch (error) {
+      next(error);
+    }
+  });
+
 
 
   // ===== PRODUCTS ROUTES =====

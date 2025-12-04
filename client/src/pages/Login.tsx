@@ -86,10 +86,10 @@ export default function Login() {
       <Card className="w-full max-w-md p-8 relative z-10 border-white/5 bg-card/30 backdrop-blur-xl shadow-2xl">
         <div className="flex flex-col items-center justify-center gap-4 mb-8">
           <div className="w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-lg shadow-primary/20 mb-2">
-            <img src="/ast-logo.png" alt="Company" width={40} height={40} className="invert brightness-0 opacity-90" />
+            <img src="/rc-logo.png" alt="Company" width={40} height={40} className="invert brightness-0 opacity-90" />
           </div>
           <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground mb-1">AST Portal</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground mb-1">Dashboard Lite</h1>
             <p className="text-muted-foreground text-sm">Sign in to access your dashboard</p>
           </div>
         </div>

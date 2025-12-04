@@ -125,7 +125,7 @@
   --border-angle: 0deg;
   -webkit-mask-image: conic-gradient(from 180deg at 50% 50%, black var(--border-angle), transparent var(--border-angle));
   mask-image: conic-gradient(from 180deg at 50% 50%, black var(--border-angle), transparent var(--border-angle));
-  transition: --border-angle 0.8s ease-in-out;
+  transition: --border-angle 0.5s ease-in-out;
 }
 
 .group:hover .hover-border-mask {

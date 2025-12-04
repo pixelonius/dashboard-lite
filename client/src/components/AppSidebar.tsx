@@ -80,7 +80,7 @@ export default function AppSidebar() {
           <SidebarGroupLabel className="px-6 py-6 mb-4">
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-primary shadow-lg shadow-primary/20">
-                <img src="/ast-logo.png" alt="Company" width={24} height={24} className="shrink-0 invert brightness-0" />
+                <img src="/rc-logo.png" alt="Company" width={24} height={24} className="shrink-0 invert brightness-0" />
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-lg tracking-tight text-foreground">Dashboard</span>

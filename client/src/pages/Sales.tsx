@@ -141,15 +141,15 @@ export default function Sales() {
   });
 
   const closers =
-    teamMembers?.members.filter((m: any) => m.role === "closer") || [];
+    teamMembers?.members.filter((m: any) => m.role === "CLOSER") || [];
   const setters =
-    teamMembers?.members.filter((m: any) => m.role === "sdr") || [];
+    teamMembers?.members.filter((m: any) => m.role === "SETTER") || [];
   const setterAssignmentOptions =
     teamMembers?.members.filter(
-      (m: any) => m.role === "sdr" || m.role === "dm_setter"
+      (m: any) => m.role === "SETTER" || m.role === "DM_SETTER"
     ) || [];
   const dmSetters =
-    teamMembers?.members.filter((m: any) => m.role === "dm_setter") || [];
+    teamMembers?.members.filter((m: any) => m.role === "DM_SETTER") || [];
 
   const getAssignmentKey = (paymentId: number, field: AssignmentField) =>
     `${paymentId}-${field}`;
@@ -425,205 +425,205 @@ export default function Sales() {
   // Closers metrics cards (10 cards in Closers section)
   const closersMetricsKpis = closersData?.metrics
     ? [
-        {
-          title: "Total Booked Calls",
-          value: closersData.metrics.totalBookedCalls.toString(),
-          icon: PhoneCall,
-          iconColor: "bg-blue-500",
-        },
-        {
-          title: "Live Calls",
-          value: closersData.metrics.liveCalls.toString(),
-          icon: Phone,
-          iconColor: "bg-green-500",
-        },
-        {
-          title: "Offers Made",
-          value: closersData.metrics.offersMade.toString(),
-          icon: Target,
-          iconColor: "bg-purple-500",
-        },
-        {
-          title: "Closes",
-          value: closersData.metrics.closes.toString(),
-          icon: Target,
-          iconColor: "bg-purple-500",
-        },
-        {
-          title: "Offer Rate",
-          value: `${(closersData.metrics.offerRate * 100).toFixed(1)}%`,
-          icon: Target,
-          iconColor: "bg-blue-500",
-        },
-        {
-          title: "Offer to Close Rate",
-          value: `${(closersData.metrics.offerToCloseRate * 100).toFixed(1)}%`,
-          icon: TrendingUp,
-          iconColor: "bg-green-500",
-        },
-        {
-          title: "Close Rate",
-          value: `${(closersData.metrics.closeRate * 100).toFixed(1)}%`,
-          icon: Target,
-          iconColor: "bg-indigo-500",
-        },
-        {
-          title: "Cash Collected/Live Call",
-          value: `$${closersData.metrics.cashPerLiveCall.toFixed(0)}`,
-          icon: DollarSign,
-          iconColor: "bg-primary",
-        },
-        {
-          title: "Avg CC / Day",
-          value: `$${closersData.metrics.avgCashPerDay.toFixed(0)}`,
-          icon: DollarSign,
-          iconColor: "bg-orange-500",
-        },
-        {
-          title: "Cash Collected",
-          value: `$${closersData.metrics.closedWonRevenueMTD.toLocaleString()}`,
-          icon: DollarSign,
-          iconColor: "bg-emerald-500",
-        },
-        {
-          title: "Upcoming Calls",
-          value: closersData.metrics.callsOnCalendar.toString(),
-          icon: PhoneCall,
-          iconColor: "bg-blue-500",
-        },
-      ]
+      {
+        title: "Total Booked Calls",
+        value: closersData.metrics.totalBookedCalls.toString(),
+        icon: PhoneCall,
+        iconColor: "bg-blue-500",
+      },
+      {
+        title: "Live Calls",
+        value: closersData.metrics.liveCalls.toString(),
+        icon: Phone,
+        iconColor: "bg-green-500",
+      },
+      {
+        title: "Offers Made",
+        value: closersData.metrics.offersMade.toString(),
+        icon: Target,
+        iconColor: "bg-purple-500",
+      },
+      {
+        title: "Closes",
+        value: closersData.metrics.closes.toString(),
+        icon: Target,
+        iconColor: "bg-purple-500",
+      },
+      {
+        title: "Offer Rate",
+        value: `${(closersData.metrics.offerRate * 100).toFixed(1)}%`,
+        icon: Target,
+        iconColor: "bg-blue-500",
+      },
+      {
+        title: "Offer to Close Rate",
+        value: `${(closersData.metrics.offerToCloseRate * 100).toFixed(1)}%`,
+        icon: TrendingUp,
+        iconColor: "bg-green-500",
+      },
+      {
+        title: "Close Rate",
+        value: `${(closersData.metrics.closeRate * 100).toFixed(1)}%`,
+        icon: Target,
+        iconColor: "bg-indigo-500",
+      },
+      {
+        title: "Cash Collected/Live Call",
+        value: `$${closersData.metrics.cashPerLiveCall.toFixed(0)}`,
+        icon: DollarSign,
+        iconColor: "bg-primary",
+      },
+      {
+        title: "Avg CC / Day",
+        value: `$${closersData.metrics.avgCashPerDay.toFixed(0)}`,
+        icon: DollarSign,
+        iconColor: "bg-orange-500",
+      },
+      {
+        title: "Cash Collected",
+        value: `$${closersData.metrics.closedWonRevenueMTD.toLocaleString()}`,
+        icon: DollarSign,
+        iconColor: "bg-emerald-500",
+      },
+      {
+        title: "Upcoming Calls",
+        value: closersData.metrics.callsOnCalendar.toString(),
+        icon: PhoneCall,
+        iconColor: "bg-blue-500",
+      },
+    ]
     : [];
 
   // Setters metrics cards (9 cards)
   const settersMetricsKpis = settersData?.metrics
     ? [
-        {
-          title: "Outbound Dials",
-          value: settersData.metrics.outboundDials.toString(),
-          icon: Phone,
-          iconColor: "bg-cyan-500",
-        },
-        {
-          title: "Pick-ups",
-          value: settersData.metrics.pickUps.toString(),
-          icon: PhoneCall,
-          iconColor: "bg-green-500",
-        },
-        {
-          title: "Booked Calls",
-          value: settersData.metrics.bookedCalls.toString(),
-          icon: Target,
-          iconColor: "bg-purple-500",
-        },
-        {
-          title: "Reschedules",
-          value: settersData.metrics.reschedules.toString(),
-          icon: PhoneCall,
-          iconColor: "bg-amber-500",
-        },
-        {
-          title: "Closed Won",
-          value: settersData.metrics.closedWon.toString(),
-          icon: Users,
-          iconColor: "bg-cyan-500",
-        },
-        {
-          title: "CC",
-          value: `$${settersData.metrics.cashCollected.toLocaleString()}`,
-          icon: DollarSign,
-          iconColor: "bg-green-600",
-        },
-        {
-          title: "Pick Up to Booked Call %",
-          value: `${(settersData.metrics.pickUpToBookedPct * 100).toFixed(1)}%`,
-          icon: TrendingUp,
-          iconColor: "bg-blue-500",
-        },
-        {
-          title: "CC/day",
-          value: `$${settersData.metrics.cashPerDay.toFixed(0)}`,
-          icon: DollarSign,
-          iconColor: "bg-orange-500",
-        },
-        {
-          title: "CC/Booked Call",
-          value: `$${settersData.metrics.cashPerBookedCall.toFixed(0)}`,
-          icon: DollarSign,
-          iconColor: "bg-primary",
-        },
-      ]
+      {
+        title: "Outbound Dials",
+        value: settersData.metrics.outboundDials.toString(),
+        icon: Phone,
+        iconColor: "bg-cyan-500",
+      },
+      {
+        title: "Pick-ups",
+        value: settersData.metrics.pickUps.toString(),
+        icon: PhoneCall,
+        iconColor: "bg-green-500",
+      },
+      {
+        title: "Booked Calls",
+        value: settersData.metrics.bookedCalls.toString(),
+        icon: Target,
+        iconColor: "bg-purple-500",
+      },
+      {
+        title: "Reschedules",
+        value: settersData.metrics.reschedules.toString(),
+        icon: PhoneCall,
+        iconColor: "bg-amber-500",
+      },
+      {
+        title: "Closed Won",
+        value: settersData.metrics.closedWon.toString(),
+        icon: Users,
+        iconColor: "bg-cyan-500",
+      },
+      {
+        title: "CC",
+        value: `$${settersData.metrics.cashCollected.toLocaleString()}`,
+        icon: DollarSign,
+        iconColor: "bg-green-600",
+      },
+      {
+        title: "Pick Up to Booked Call %",
+        value: `${(settersData.metrics.pickUpToBookedPct * 100).toFixed(1)}%`,
+        icon: TrendingUp,
+        iconColor: "bg-blue-500",
+      },
+      {
+        title: "CC/day",
+        value: `$${settersData.metrics.cashPerDay.toFixed(0)}`,
+        icon: DollarSign,
+        iconColor: "bg-orange-500",
+      },
+      {
+        title: "CC/Booked Call",
+        value: `$${settersData.metrics.cashPerBookedCall.toFixed(0)}`,
+        icon: DollarSign,
+        iconColor: "bg-primary",
+      },
+    ]
     : [];
 
   // DM Setters metrics cards (11 cards)
   const dmSettersMetricsKpis = dmSettersData?.metrics
     ? [
-        {
-          title: "DMs Outbound",
-          value: dmSettersData.metrics.dmsOutbound.toString(),
-          icon: MessageSquare,
-          iconColor: "bg-pink-500",
-        },
-        {
-          title: "DMs Inbound",
-          value: dmSettersData.metrics.dmsInbound.toString(),
-          icon: MessageSquare,
-          iconColor: "bg-violet-500",
-        },
-        {
-          title: "Booked Calls",
-          value: dmSettersData.metrics.bookedCalls.toString(),
-          icon: PhoneCall,
-          iconColor: "bg-blue-500",
-        },
-        {
-          title: "Follow Ups",
-          value: dmSettersData.metrics.followUps.toString(),
-          icon: Target,
-          iconColor: "bg-amber-500",
-        },
-        {
-          title: "Sets Taken",
-          value: dmSettersData.metrics.setsTaken.toString(),
-          icon: Users,
-          iconColor: "bg-cyan-600",
-        },
-        {
-          title: "Closed Won",
-          value: dmSettersData.metrics.closedWon.toString(),
-          icon: Users,
-          iconColor: "bg-green-600",
-        },
-        {
-          title: "CC",
-          value: `$${dmSettersData.metrics.cashCollected.toLocaleString()}`,
-          icon: DollarSign,
-          iconColor: "bg-emerald-600",
-        },
-        {
-          title: "Conversation Rate",
-          value: `${(dmSettersData.metrics.conversationRate * 100).toFixed(1)}%`,
-          icon: TrendingUp,
-          iconColor: "bg-purple-500",
-        },
-        {
-          title: "Booking Rate",
-          value: `${(dmSettersData.metrics.bookingRate * 100).toFixed(1)}%`,
-          icon: TrendingUp,
-          iconColor: "bg-green-500",
-        },
-        {
-          title: "CC/Day",
-          value: `$${dmSettersData.metrics.cashPerDay.toFixed(0)}`,
-          icon: DollarSign,
-          iconColor: "bg-orange-500",
-        },
-        {
-          title: "CC/Booked Call",
-          value: `$${dmSettersData.metrics.cashPerBookedCall.toFixed(0)}`,
-          icon: DollarSign,
-          iconColor: "bg-primary",
-        },
-      ]
+      {
+        title: "DMs Outbound",
+        value: dmSettersData.metrics.dmsOutbound.toString(),
+        icon: MessageSquare,
+        iconColor: "bg-pink-500",
+      },
+      {
+        title: "DMs Inbound",
+        value: dmSettersData.metrics.dmsInbound.toString(),
+        icon: MessageSquare,
+        iconColor: "bg-violet-500",
+      },
+      {
+        title: "Booked Calls",
+        value: dmSettersData.metrics.bookedCalls.toString(),
+        icon: PhoneCall,
+        iconColor: "bg-blue-500",
+      },
+      {
+        title: "Follow Ups",
+        value: dmSettersData.metrics.followUps.toString(),
+        icon: Target,
+        iconColor: "bg-amber-500",
+      },
+      {
+        title: "Sets Taken",
+        value: dmSettersData.metrics.setsTaken.toString(),
+        icon: Users,
+        iconColor: "bg-cyan-600",
+      },
+      {
+        title: "Closed Won",
+        value: dmSettersData.metrics.closedWon.toString(),
+        icon: Users,
+        iconColor: "bg-green-600",
+      },
+      {
+        title: "CC",
+        value: `$${dmSettersData.metrics.cashCollected.toLocaleString()}`,
+        icon: DollarSign,
+        iconColor: "bg-emerald-600",
+      },
+      {
+        title: "Conversation Rate",
+        value: `${(dmSettersData.metrics.conversationRate * 100).toFixed(1)}%`,
+        icon: TrendingUp,
+        iconColor: "bg-purple-500",
+      },
+      {
+        title: "Booking Rate",
+        value: `${(dmSettersData.metrics.bookingRate * 100).toFixed(1)}%`,
+        icon: TrendingUp,
+        iconColor: "bg-green-500",
+      },
+      {
+        title: "CC/Day",
+        value: `$${dmSettersData.metrics.cashPerDay.toFixed(0)}`,
+        icon: DollarSign,
+        iconColor: "bg-orange-500",
+      },
+      {
+        title: "CC/Booked Call",
+        value: `$${dmSettersData.metrics.cashPerBookedCall.toFixed(0)}`,
+        icon: DollarSign,
+        iconColor: "bg-primary",
+      },
+    ]
     : [];
 
   // Closer Performance table columns
