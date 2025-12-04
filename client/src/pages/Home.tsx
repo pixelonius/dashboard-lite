@@ -11,7 +11,6 @@ import {
   SalesTopCardsResponse,
   AdsSummaryResponse,
   EmailSummaryResponse,
-  CsmSummaryResponse,
   HomeTransactionsResponse
 } from '@/types/api';
 
@@ -87,17 +86,7 @@ export default function Home() {
     },
   });
 
-  //Fetch CSM Top Cards
-  const { data: csmSummary, isLoading: csmSummaryLoading } = useQuery<CsmSummaryResponse>({
-    queryKey: ['/api/v1/csm/summary'],
-    queryFn: async () => {
-      const res = await fetch('/api/v1/csm/summary', {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Failed to fetch csm summary');
-      return res.json();
-    }
-  });
+
 
   // Fetch transactions
   const { data: transactionsData, isLoading: transactionsLoading } = useQuery<HomeTransactionsResponse>({
@@ -281,37 +270,7 @@ export default function Home() {
     },
   ]
 
-  const csmKpiData = [
-    {
-      title: 'Active Members',
-      value: csmSummary?.activeMembers?.toString() || '0',
-      icon: Users,
-      iconColor: 'bg-blue-500',
-      loading: csmSummaryLoading,
-    },
-    {
-      title: 'Total Owed (Payment Plans)',
-      value: csmSummary ? `$${csmSummary.totalOwed.toLocaleString()}` : '$0',
-      icon: DollarSign,
-      iconColor: 'bg-green-500',
-      loading: csmSummaryLoading,
-    },
-    {
-      title: 'High-Risk Clients',
-      value: csmSummary?.highRiskClients?.toString() || '0',
-      icon: AlertTriangle,
-      iconColor: 'bg-orange-500',
-      loading: csmSummaryLoading,
-    },
-    //TODO: IMPLEMENT REFUNDS
-    // {
-    //   title: 'Refunds',
-    //   value: summary ? `$${summary.cards.refunds.amount.toLocaleString()}` : '$0',
-    //   icon: RotateCcw,
-    //   iconColor: 'bg-gray-500',
-    //   loading: summaryLoading,
-    // },
-  ];
+
 
   // Prepare chart data
   const chartSeries = summary?.charts.cashCollectedBySource
@@ -399,21 +358,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* CSM KPI Cards */}
-      <div> <h2 className="text-xl font-semibold" data-testid="text-page-title">CSM Summary</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {csmKpiData.map((kpi, idx) => (
-            <KpiCard
-              key={idx}
-              title={kpi.title}
-              value={kpi.value}
-              icon={kpi.icon}
-              iconColor={kpi.iconColor}
-              loading={kpi.loading}
-            />
-          ))}
-        </div>
-      </div>
+
 
       {/* Cash Collected by Source Chart */}
       {chartSeries.length > 0 && (

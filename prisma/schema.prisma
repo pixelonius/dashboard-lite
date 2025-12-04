@@ -16,7 +16,6 @@ enum UserRole {
   ADMIN
   SALES
   MARKETING
-  CSM
 }
 
 model User {
@@ -28,9 +27,6 @@ model User {
   active       Boolean  @default(true)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
-
-  // Relationships
-  managedEnrollments Enrollment[] @relation("CSM")
 
   @@map("users")
 }
@@ -144,21 +140,16 @@ model Enrollment {
   progressTrackerSheet String?   @map("progress_tracker_sheet")
 
   // Assignments
-  csmId    Int? @map("csm_id")
   closerId Int? @map("closer_id")
   setterId Int? @map("setter_id")
 
   // Relationships
   student      Student          @relation(fields: [studentId], references: [id])
   program      Program          @relation(fields: [programId], references: [id])
-  csm          User?            @relation("CSM", fields: [csmId], references: [id])
   closer       TeamMember?      @relation("Closer", fields: [closerId], references: [id])
   setter       TeamMember?      @relation("Setter", fields: [setterId], references: [id])
   payments     Payment[]
   installments Installment[]
-  onboarding   OnboardingState?
-  progress     WeeklyProgress[]
-  checkIns     CheckIn[]
 
   @@map("enrollments")
 }
@@ -237,56 +228,6 @@ model Installment {
   enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
 
   @@map("installments")
-}
-
-// ==========================================
-// OPERATIONS / CSM
-// ==========================================
-
-model OnboardingState {
-  id             Int     @id @default(autoincrement())
-  enrollmentId   Int     @unique @map("enrollment_id")
-  callCompleted  Boolean @default(false) @map("call_completed")
-  slackJoined    Boolean @default(false) @map("slack_joined")
-  courseAccess   Boolean @default(false) @map("course_access")
-  communityIntro Boolean @default(false) @map("community_intro")
-  goalsSet       Boolean @default(false) @map("goals_set")
-  referralsAsked Boolean @default(false) @map("referrals_asked")
-
-  // Relationships
-  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
-
-  @@map("onboarding_states")
-}
-
-model WeeklyProgress {
-  id               Int     @id @default(autoincrement())
-  enrollmentId     Int     @map("enrollment_id")
-  weekNumber       Int     @map("week_number")
-  attendedTraining Boolean @default(false) @map("attended_training")
-  completedModules Boolean @default(false) @map("completed_modules")
-  notes            String?
-  outcome          String?
-
-  // Relationships
-  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
-
-  @@map("weekly_progress")
-}
-
-model CheckIn {
-  id           Int      @id @default(autoincrement())
-  enrollmentId Int      @map("enrollment_id")
-  date         DateTime @default(now())
-  wins         String?
-  challenges   String?
-  satisfaction Int? // 1-10
-  feedback     String?
-
-  // Relationships
-  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
-
-  @@map("check_ins")
 }
 
 // ==========================================

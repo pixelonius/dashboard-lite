@@ -13,7 +13,6 @@ import Home from "@/pages/Home";
 import Sales from "@/pages/Sales";
 import MarketingContent from "@/pages/MarketingContent";
 import MarketingAdSpend from "@/pages/MarketingAdSpend";
-import CSM from "@/pages/CSM";
 import Email from "@/pages/Email";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
@@ -60,8 +59,6 @@ function Router() {
         return '/sales';
       case 'MARKETING':
         return '/marketing/content';
-      case 'CSM':
-        return '/csm';
       case 'ADMIN':
       default:
         return '/home';
@@ -102,13 +99,6 @@ function Router() {
         <ProtectedRoute allowedRoles={['MARKETING', 'ADMIN']}>
           <AuthenticatedLayout>
             <MarketingAdSpend />
-          </AuthenticatedLayout>
-        </ProtectedRoute>
-      </Route>
-      <Route path="/csm">
-        <ProtectedRoute allowedRoles={['CSM', 'ADMIN']}>
-          <AuthenticatedLayout>
-            <CSM />
           </AuthenticatedLayout>
         </ProtectedRoute>
       </Route>

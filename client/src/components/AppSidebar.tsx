@@ -64,11 +64,6 @@ const menuItems = [
     ],
   },
   {
-    title: "CSM",
-    icon: Users,
-    url: "/csm",
-  },
-  {
     title: "Settings",
     icon: Settings,
     url: "/settings",
@@ -93,7 +88,7 @@ export default function AppSidebar() {
             <SidebarMenu>
               {menuItems.map((item) => {
                 const isActive = location === item.url || location.startsWith(item.url + '/');
-                
+
                 if (item.submenu) {
                   // Marketing section - always expanded, no toggle
                   return (
@@ -120,7 +115,7 @@ export default function AppSidebar() {
                     </SidebarMenuItem>
                   );
                 }
-                
+
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive} data-testid={`link-nav-${item.title.toLowerCase()}`}>

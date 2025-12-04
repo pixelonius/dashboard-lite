@@ -18,9 +18,6 @@ async function main() {
 
   // Clean tables in order of dependencies
   await prisma.dailyMetric.deleteMany();
-  await prisma.checkIn.deleteMany();
-  await prisma.weeklyProgress.deleteMany();
-  await prisma.onboardingState.deleteMany();
   await prisma.installment.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.salesCall.deleteMany();
@@ -48,15 +45,7 @@ async function main() {
     prisma.user.create({
       data: { email: 'marketing@demo.com', passwordHash, role: UserRole.MARKETING, name: 'Marketing Director' },
     }),
-    prisma.user.create({
-      data: { email: 'csm@demo.com', passwordHash, role: UserRole.CSM, name: 'Sarah CSM' },
-    }),
-    prisma.user.create({
-      data: { email: 'csm2@demo.com', passwordHash, role: UserRole.CSM, name: 'Mike CSM' },
-    }),
   ]);
-
-  const csmUsers = users.filter(u => u.role === UserRole.CSM);
 
   console.log('✅ Created platform users');
 
@@ -92,11 +81,15 @@ async function main() {
   console.log('✅ Created programs');
 
   // ========== CREATE ADS ==========
-  const campaigns = await Promise.all([
-    prisma.adCampaign.create({ data: { name: 'Cold Traffic - FB', platform: 'facebook' } }),
-    prisma.adCampaign.create({ data: { name: 'Retargeting - IG', platform: 'instagram' } }),
-    prisma.adCampaign.create({ data: { name: 'Search - Google', platform: 'google' } }),
-  ]);
+  const CAMPAIGNS = [
+    { name: 'Cold Traffic - FB', platform: 'facebook' },
+    { name: 'Retargeting - IG', platform: 'instagram' },
+    { name: 'Search - Google', platform: 'google' },
+  ];
+
+  const campaigns = await Promise.all(
+    CAMPAIGNS.map(c => prisma.adCampaign.create({ data: c }))
+  );
 
   // Ad Performance Data (Last 90 days)
   const now = new Date();
@@ -132,9 +125,26 @@ async function main() {
 
   // ========== CREATE LEADS & SALES CALLS ==========
   const leads = [];
+  const SOURCES = ['Ads', 'Organic', 'Referral'];
+
   for (let i = 0; i < 200; i++) {
     const date = daysAgo(Math.floor(Math.random() * 90));
     const status = Object.values(LeadStatus)[Math.floor(Math.random() * Object.values(LeadStatus).length)];
+    const source = SOURCES[Math.floor(Math.random() * SOURCES.length)];
+
+    let campaignName = null;
+    let medium = null;
+
+    if (source === 'Ads') {
+      const randomCampaign = campaigns[Math.floor(Math.random() * campaigns.length)];
+      campaignName = randomCampaign.name;
+      medium = randomCampaign.platform === 'google' ? 'Search' : 'Social';
+    } else if (source === 'Organic') {
+      medium = 'Social';
+      campaignName = 'Organic Content';
+    } else {
+      medium = 'Word of Mouth';
+    }
 
     const lead = await prisma.lead.create({
       data: {
@@ -142,10 +152,10 @@ async function main() {
         firstName: `Lead${i}`,
         lastName: `Doe`,
         phone: `555-01${i.toString().padStart(2, '0')}`,
-        source: ['Ads', 'Organic', 'Referral'][Math.floor(Math.random() * 3)],
-        campaign: 'Q4 Promo',
-        medium: 'Social',
-        term: 'coaching',
+        source: source,
+        campaign: campaignName,
+        medium: medium,
+        term: source === 'Ads' ? 'coaching' : null,
         status: status as LeadStatus,
         createdAt: date,
       }
@@ -244,21 +254,9 @@ async function main() {
         }
       });
     }
-
-    // Create Check-in
-    await prisma.checkIn.create({
-      data: {
-        enrollmentId: enrollment.id,
-        date: new Date(),
-        wins: 'Got a job interview!',
-        challenges: 'Time management',
-        satisfaction: Math.floor(Math.random() * 3) + 8,
-        feedback: 'Love the program',
-      }
-    });
   }
 
-  console.log('✅ Created students, enrollments, payments, and CSM data');
+  console.log('✅ Created students, enrollments, and payments');
 
   // ========== CREATE DAILY METRICS ==========
   // Generate synthetic metrics for team members
@@ -302,7 +300,7 @@ async function main() {
   console.log('\nDemo Portal Credentials:');
   console.log('  Admin: admin@demo.com / password123');
   console.log('  Sales: sales@demo.com / password123');
-  console.log('  CSM: csm@demo.com / password123');
+  console.log('  Marketing: marketing@demo.com / password123');
 }
 
 main()
