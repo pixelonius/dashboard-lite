@@ -9,11 +9,15 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "shadcn-card rounded-xl border bg-card border-card-border text-card-foreground shadow-sm",
+      "shadcn-card rounded-xl border bg-card border-card-border text-card-foreground shadow-sm relative group overflow-hidden",
       className
     )}
     {...props}
-  />
+  >
+    {/* Hover Border Animation */}
+    <div className="absolute inset-0 rounded-xl border-2 border-primary pointer-events-none hover-border-mask opacity-0 group-hover:opacity-100" />
+    {props.children}
+  </div>
 ));
 Card.displayName = "Card"
 

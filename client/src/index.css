@@ -113,3 +113,21 @@
     @apply bg-card/40 backdrop-blur-md border-white/5 hover:bg-card/60 transition-all duration-300;
   }
 }
+
+/* Hover Border Animation Utilities */
+@property --border-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.hover-border-mask {
+  --border-angle: 0deg;
+  -webkit-mask-image: conic-gradient(from 180deg at 50% 50%, black var(--border-angle), transparent var(--border-angle));
+  mask-image: conic-gradient(from 180deg at 50% 50%, black var(--border-angle), transparent var(--border-angle));
+  transition: --border-angle 0.8s ease-in-out;
+}
+
+.group:hover .hover-border-mask {
+  --border-angle: 360deg;
+}
