@@ -111,42 +111,42 @@ export default function Home() {
       title: 'Net Revenue (CC)',
       value: summary ? `$${summary.cards.netRevenue.toLocaleString()}` : '$0',
       icon: DollarSign,
-      iconColor: 'bg-primary',
       loading: summaryLoading,
+      variant: 'gradient-primary' as const,
     },
     {
       title: 'New Customers',
       value: summary?.cards.newCustomers?.toString() || '0',
       icon: Users,
-      iconColor: 'bg-green-500',
       loading: summaryLoading,
+      variant: 'gradient-accent' as const,
     },
     {
       title: 'Closed-Won Revenue',
       value: summary ? `$${summary.cards.closedWonRevenue.toLocaleString()}` : '$0',
       icon: TrendingUp,
-      iconColor: 'bg-blue-500',
       loading: summaryLoading,
+      variant: 'gradient-cyan' as const,
     },
     {
       title: 'Leads Captured',
       value: summary?.cards.leadsCaptured?.toString() || '0',
       icon: Target,
-      iconColor: 'bg-purple-500',
       loading: summaryLoading,
+      variant: 'gradient-pink' as const,
     },
     {
       title: 'Ad Spend',
       value: summary ? `$${summary.cards.adSpend.toLocaleString()}` : '$0',
       icon: TrendingDown,
-      iconColor: 'bg-orange-500',
+      iconColor: 'text-orange-500',
       loading: summaryLoading,
     },
     {
       title: 'Overdue Payments',
       value: summary ? `$${summary.cards.overduePayments.total.toLocaleString()} (${summary.cards.overduePayments.count})` : '$0 (0)',
       icon: AlertCircle,
-      iconColor: 'bg-red-500',
+      iconColor: 'text-red-500',
       loading: summaryLoading,
     },
   ]
@@ -322,6 +322,7 @@ export default function Home() {
             icon={kpi.icon}
             iconColor={kpi.iconColor}
             loading={kpi.loading}
+            variant={kpi.variant}
           />
         ))}
       </div>

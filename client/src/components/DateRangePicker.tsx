@@ -62,7 +62,7 @@ export default function DateRangePicker({ onRangeChange }: DateRangePickerProps)
 
   const handleCustomRangeSelect = (range: DateRange | undefined) => {
     setCustomRange(range);
-    
+
     if (range?.from && range?.to) {
       setActivePreset("custom");
       onRangeChange?.(range.from, range.to, "custom");
@@ -79,32 +79,48 @@ export default function DateRangePicker({ onRangeChange }: DateRangePickerProps)
   };
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center gap-2 flex-wrap bg-card/30 p-1 rounded-xl border border-white/5 backdrop-blur-sm">
       {presets.filter(p => p.value !== "custom").map((preset) => (
         <Button
           key={preset.value}
-          variant={activePreset === preset.value ? "default" : "outline"}
+          variant="ghost"
           size="sm"
           onClick={() => handlePresetClick(preset.value)}
           data-testid={`button-date-${preset.value}`}
+          className={`
+            h-8 rounded-lg text-xs font-medium transition-all duration-200
+            ${activePreset === preset.value
+              ? "bg-primary text-white shadow-lg shadow-primary/25"
+              : "text-muted-foreground hover:text-white hover:bg-white/5"
+            }
+          `}
         >
           {preset.label}
         </Button>
       ))}
-      
+
+      <div className="w-px h-4 bg-white/10 mx-1" />
+
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant={activePreset === "custom" ? "default" : "outline"}
+            variant="ghost"
             size="sm"
             onClick={() => setIsOpen(true)}
             data-testid="button-date-custom"
+            className={`
+              h-8 rounded-lg text-xs font-medium transition-all duration-200 border border-transparent
+              ${activePreset === "custom"
+                ? "bg-primary text-white shadow-lg shadow-primary/25"
+                : "text-muted-foreground hover:text-white hover:bg-white/5 border-white/5"
+              }
+            `}
           >
-            <CalendarIcon className="w-3 h-3 mr-1" />
+            <CalendarIcon className="w-3.5 h-3.5 mr-2 opacity-70" />
             {getCustomLabel()}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
+        <PopoverContent className="w-auto p-0 border-white/10 bg-card/95 backdrop-blur-xl shadow-2xl" align="end">
           <Calendar
             mode="range"
             selected={customRange}
