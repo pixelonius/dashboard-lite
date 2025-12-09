@@ -1,6 +1,7 @@
 import { app } from "./app";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { setupVite, serveStatic } from "./vite";
+import { log } from "./lib/logger";
 import { Request, Response, NextFunction } from "express";
 
 (async () => {
