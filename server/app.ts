@@ -2,7 +2,7 @@ import express from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
-import { log } from "./vite";
+import { log } from "./lib/logger";
 
 const app = express();
 
