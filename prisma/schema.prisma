@@ -238,13 +238,28 @@ model DailyMetric {
   id            Int      @id @default(autoincrement())
   teamMemberId  Int      @map("team_member_id")
   date          DateTime
-  calls         Int      @default(0)
-  conversations Int      @default(0)
-  booked        Int      @default(0)
-  offers        Int      @default(0)
-  closes        Int      @default(0)
-  cash          Decimal  @default(0) @db.Decimal(10, 2)
+  
+  // Common
   notes         String?
+  
+  // Closer Specific
+  scheduledCalls Int      @default(0) @map("scheduled_calls")
+  liveCalls      Int      @default(0) @map("live_calls") // Shared with Setter
+  offersMade     Int      @default(0) @map("offers_made")
+  closes         Int      @default(0)
+  cashCollected  Decimal  @default(0) @map("cash_collected") @db.Decimal(10, 2)
+  revenue        Decimal  @default(0) @db.Decimal(10, 2)
+  struggles      String?
+
+  // Setter Specific
+  callsMade      Int      @default(0) @map("calls_made")
+  bookedCalls    Int      @default(0) @map("booked_calls") // Shared with DM Setter
+  reschedules    Int      @default(0) // Shared with DM Setter
+  unqualifiedLeads Int    @default(0) @map("unqualified_leads") // Shared with DM Setter
+
+  // DM Setter Specific
+  dmsSent             Int @default(0) @map("dms_sent")
+  conversationsStarted Int @default(0) @map("conversations_started")
 
   // Relationships
   teamMember TeamMember @relation(fields: [teamMemberId], references: [id])

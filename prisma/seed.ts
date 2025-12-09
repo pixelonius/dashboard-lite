@@ -184,7 +184,11 @@ async function main() {
 
   // ========== CREATE STUDENTS & ENROLLMENTS ==========
   // Convert some leads to students
-  const convertedLeads = leads.filter(l => l.status === LeadStatus.QUALIFIED).slice(0, 50);
+  console.log('LeadStatus values:', Object.values(LeadStatus));
+  const qualifiedLeads = leads.filter(l => l.status === LeadStatus.QUALIFIED);
+  console.log(`Total leads: ${leads.length}`);
+  console.log(`Qualified leads: ${qualifiedLeads.length}`);
+  const convertedLeads = qualifiedLeads.slice(0, 50);
   for (const lead of convertedLeads) {
     const student = await prisma.student.create({
       data: {
@@ -208,6 +212,8 @@ async function main() {
         startDate: new Date(),
         planType: isSplit ? 'SPLIT' : 'PIF',
         contractValue: contractValue,
+        closerId: closers[Math.floor(Math.random() * closers.length)].id,
+        setterId: allSetters[Math.floor(Math.random() * allSetters.length)].id,
       }
     });
 
@@ -264,33 +270,58 @@ async function main() {
     const date = daysAgo(i);
 
     for (const tm of teamMembers) {
-      let calls = 0, conversations = 0, booked = 0, offers = 0, closes = 0, cash = 0;
+      const metricData: any = {
+        teamMemberId: tm.id,
+        date,
+        notes: Math.random() > 0.8 ? 'Had a great day!' : null,
+      };
+
+      console.log(`Seeding for ${tm.firstName} (${tm.role})`);
 
       if (tm.role === TeamMemberRole.CLOSER) {
-        calls = Math.floor(Math.random() * 5) + 2; // Live calls
-        offers = Math.floor(calls * 0.8);
-        closes = Math.floor(offers * 0.3);
-        cash = closes * 5000;
+        // Closer Metrics
+        const scheduled = Math.floor(Math.random() * 8) + 4; // 4-11 calls
+        const live = Math.floor(scheduled * (Math.random() * 0.3 + 0.7)); // 70-100% show rate
+        const offers = Math.floor(live * (Math.random() * 0.4 + 0.5)); // 50-90% offer rate
+        const closes = Math.floor(offers * (Math.random() * 0.4 + 0.2)); // 20-60% close rate
+        const cash = closes * 5000;
+
+        metricData.scheduledCalls = scheduled;
+        metricData.liveCalls = live;
+        metricData.offersMade = offers;
+        metricData.closes = closes;
+        metricData.cashCollected = cash;
+        metricData.revenue = cash;
+        metricData.reschedules = Math.floor(Math.random() * 3);
+        metricData.struggles = Math.random() > 0.9 ? 'No shows were high today' : null;
+
       } else if (tm.role === TeamMemberRole.SETTER) {
-        calls = Math.floor(Math.random() * 50) + 20; // Dials
-        conversations = Math.floor(calls * 0.2);
-        booked = Math.floor(conversations * 0.3);
+        // Setter Metrics
+        const calls = Math.floor(Math.random() * 60) + 40; // 40-100 calls
+        const live = Math.floor(calls * (Math.random() * 0.15 + 0.1)); // 10-25% pickup
+        const booked = Math.floor(live * (Math.random() * 0.3 + 0.2)); // 20-50% booking rate
+
+        metricData.callsMade = calls;
+        metricData.liveCalls = live;
+        metricData.bookedCalls = booked;
+        metricData.reschedules = Math.floor(Math.random() * 3);
+        metricData.unqualifiedLeads = Math.floor(Math.random() * 5);
+
       } else if (tm.role === TeamMemberRole.DM_SETTER) {
-        conversations = Math.floor(Math.random() * 30) + 10; // DMs
-        booked = Math.floor(conversations * 0.1);
+        // DM Setter Metrics
+        const dms = Math.floor(Math.random() * 60) + 40; // 40-100 DMs
+        const convos = Math.floor(dms * (Math.random() * 0.4 + 0.3)); // 30-70% response
+        const booked = Math.floor(convos * (Math.random() * 0.2 + 0.1)); // 10-30% booking rate
+
+        metricData.dmsSent = dms;
+        metricData.conversationsStarted = convos;
+        metricData.bookedCalls = booked;
+        metricData.reschedules = Math.floor(Math.random() * 3);
+        metricData.unqualifiedLeads = Math.floor(Math.random() * 5);
       }
 
       await prisma.dailyMetric.create({
-        data: {
-          teamMemberId: tm.id,
-          date,
-          calls,
-          conversations,
-          booked,
-          offers,
-          closes,
-          cash,
-        }
+        data: metricData
       });
     }
   }

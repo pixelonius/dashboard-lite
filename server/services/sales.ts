@@ -1,16 +1,6 @@
-/**
- * Sales page metric calculations
- */
-
 import { prisma } from '../lib/prisma';
-import type { DateRange } from '../utils/date';
+import { Prisma, TeamMemberRole } from '@prisma/client';
 import {
-  getDaysBetween,
-  getDaysInCurrentMonth,
-  getStartOfMonth,
-  formatDate,
-} from '../utils/date';
-import type {
   SalesTopCardsResponse,
   ClosersMetricsResponse,
   CloserPerformance,
@@ -20,59 +10,28 @@ import type {
   DmSettersMetricsResponse,
   DmSetterPerformance,
 } from '../types/api';
-import { TeamMemberRole } from '@prisma/client';
+import {
+  getDaysBetween,
+  getDaysInCurrentMonth,
+  getStartOfMonth,
+  formatDate,
+  DateRange,
+} from '../utils/date';
 
 /**
- * Calculate top cards for sales page (visible on all tabs)
+ * Calculate Sales Top Cards
  */
 export async function calculateSalesTopCards(range: DateRange): Promise<SalesTopCardsResponse> {
   const { from, to } = range;
 
-  // Aggregate metrics from DailyMetric table across all team members
-  const metrics = await prisma.dailyMetric.aggregate({
-    where: {
-      date: { gte: from, lte: to },
-    },
-    _sum: {
-      booked: true,
-      calls: true, // outbound dials (setters)
-      conversations: true, // pickups (setters) or dms (dm setters)?
-      offers: true,
-      closes: true,
-      cash: true,
-    },
-  });
-
-  // For specific breakdown, we might need to filter by role, but DailyMetric aggregates everything.
-  // Let's refine based on roles if needed, but for top cards "Total Booked Calls" usually implies all booked.
-
-  // Cash Collected from Payments (Source of Truth)
-  const cashCollected = await prisma.payment.aggregate({
-    where: { date: { gte: from, lte: to }, status: 'PAID' },
-    _sum: { amount: true },
-  });
-
-  // New Students (Enrollments starting in range)
-  const newStudents = await prisma.enrollment.count({
-    where: {
-      startDate: { gte: from, lte: to },
-      status: 'ACTIVE',
-    },
-  });
-
-  // Calculate specific metrics
-  // We need to distinguish between Closer metrics (Live Calls, Offers) and Setter metrics (Calls Made, Pickups)
-  // DailyMetric is generic. We should join with TeamMember to filter by role.
-
   const closersMetrics = await prisma.dailyMetric.aggregate({
     where: {
       date: { gte: from, lte: to },
-      teamMember: { role: 'CLOSER' },
+      teamMember: { role: TeamMemberRole.CLOSER },
     },
     _sum: {
-      booked: true, // Total Booked Calls? Usually Setters book them.
-      conversations: true, // Live Calls for Closers?
-      offers: true,
+      liveCalls: true,
+      offersMade: true,
       closes: true,
     },
   });
@@ -80,41 +39,49 @@ export async function calculateSalesTopCards(range: DateRange): Promise<SalesTop
   const settersMetrics = await prisma.dailyMetric.aggregate({
     where: {
       date: { gte: from, lte: to },
-      teamMember: { role: 'SETTER' },
+      teamMember: { role: TeamMemberRole.SETTER },
     },
     _sum: {
-      calls: true, // Outbound Dials
-      conversations: true, // Pickups
-      booked: true, // Sets Booked
+      callsMade: true, // Outbound Dials
+      liveCalls: true, // Pickups
+      bookedCalls: true, // Sets Booked
     },
   });
 
   const dmSettersMetrics = await prisma.dailyMetric.aggregate({
     where: {
       date: { gte: from, lte: to },
-      teamMember: { role: 'DM_SETTER' },
+      teamMember: { role: TeamMemberRole.DM_SETTER },
     },
     _sum: {
-      calls: true, // DMs Sent?
-      booked: true, // Sets Booked
+      dmsSent: true,
+      bookedCalls: true,
     },
   });
 
-  // Mapping DailyMetric fields to business logic:
-  // Closers: conversations -> Live Calls
-  // Setters: calls -> Outbound Dials, conversations -> Pickups
-  // DM Setters: calls -> DMs Sent
+  const cashCollected = await prisma.payment.aggregate({
+    where: {
+      date: { gte: from, lte: to },
+      status: 'PAID',
+    },
+    _sum: { amount: true },
+  });
 
-  const totalBookedCalls = (Number(settersMetrics._sum.booked || 0) + Number(dmSettersMetrics._sum.booked || 0));
-  const liveCalls = Number(closersMetrics._sum.conversations || 0);
-  const offersMade = Number(closersMetrics._sum.offers || 0);
+  // Mapping DailyMetric fields to business logic:
+  // Using 'as any' for _sum properties if strict typing fails due to client generation issues
+  const smSum = settersMetrics._sum as any;
+  const dmSum = dmSettersMetrics._sum as any;
+  const cmSum = closersMetrics._sum as any;
+
+  const totalBookedCalls = (Number(smSum.bookedCalls || 0) + Number(dmSum.bookedCalls || 0));
+  const liveCalls = Number(cmSum.liveCalls || 0);
+  const offersMade = Number(cmSum.offersMade || 0);
   const cashCollectedAmount = Number(cashCollected._sum.amount || 0);
 
-  // Calls on Calendar (Future)
-  const callsOnCalendar = await prisma.salesCall.count({
+  // New Students: Count from Student table based on creation date
+  const newStudents = await prisma.student.count({
     where: {
-      startTime: { gte: new Date() },
-      status: 'SCHEDULED',
+      createdAt: { gte: from, lte: to },
     },
   });
 
@@ -130,9 +97,9 @@ export async function calculateSalesTopCards(range: DateRange): Promise<SalesTop
     liveCalls,
     offersMade,
     showUpRate: totalBookedCalls > 0 ? liveCalls / totalBookedCalls : 0, // Approx
-    outboundDials: Number(settersMetrics._sum.calls || 0),
-    dmsSent: Number(dmSettersMetrics._sum.calls || 0),
-    pickups: Number(settersMetrics._sum.conversations || 0),
+    outboundDials: Number(smSum.callsMade || 0),
+    dmsSent: Number(dmSum.dmsSent || 0),
+    pickups: Number(smSum.liveCalls || 0),
     newStudents,
     companyMonthlyPacing,
   };
@@ -153,31 +120,44 @@ export async function calculateClosersMetrics(
     const [firstName, ...lastNameParts] = member.split(' ');
     const lastName = lastNameParts.join(' ');
     const tm = await prisma.teamMember.findFirst({
-      where: { firstName, lastName, role: 'CLOSER' },
+      where: { firstName, lastName, role: TeamMemberRole.CLOSER },
     });
     teamMemberId = tm?.id;
   }
 
-  const whereMetric = {
+  const whereMetric: Prisma.DailyMetricWhereInput = {
     date: { gte: from, lte: to },
     teamMember: {
       role: TeamMemberRole.CLOSER,
-      ...(teamMemberId ? { id: teamMemberId } : {}),
     },
   };
+
+  if (teamMemberId) {
+    whereMetric.teamMember = {
+      ...(whereMetric.teamMember as Prisma.TeamMemberWhereInput),
+      id: teamMemberId,
+    };
+  }
 
   const metrics = await prisma.dailyMetric.aggregate({
     where: whereMetric,
     _sum: {
-      conversations: true, // Live Calls
-      offers: true,
+      liveCalls: true,
+      offersMade: true,
       closes: true,
+      scheduledCalls: true, // For Total Booked Calls
+      reschedules: true,
+      revenue: true, // Reported Revenue
     },
   });
 
-  const liveCalls = Number(metrics._sum.conversations || 0);
-  const offersMade = Number(metrics._sum.offers || 0);
-  const closes = Number(metrics._sum.closes || 0);
+  const mSum = metrics._sum as any;
+  const liveCalls = Number(mSum.liveCalls || 0);
+  const offersMade = Number(mSum.offersMade || 0);
+  const closes = Number(mSum.closes || 0);
+  const totalBookedCalls = Number(mSum.scheduledCalls || 0);
+  const reschedules = Number(mSum.reschedules || 0);
+  const reportedRevenue = Number(mSum.revenue || 0);
 
   // Cash
   const cashData = await getCloserCash(from, to, teamMemberId);
@@ -191,19 +171,11 @@ export async function calculateClosersMetrics(
     },
   });
 
-  // Total Booked Calls (assigned to closers)
-  // This is tricky if we don't track assignment on booking. 
-  // We'll assume total booked calls for the company or just use live calls as proxy for now if unavailable.
-  // Or query SalesCalls in range.
-  const totalBookedCalls = await prisma.salesCall.count({
-    where: {
-      startTime: { gte: from, lte: to },
-      ...(teamMemberId ? { hostId: teamMemberId } : {}),
-    },
-  });
+  // Cash Collected (Actual)
+  const cashCollected = cashData.total;
 
   const daysInRange = getDaysBetween(from, to);
-  const avgCashPerDay = daysInRange > 0 ? cashData.total / daysInRange : 0;
+  const avgCashPerDay = daysInRange > 0 ? cashCollected / daysInRange : 0;
 
   return {
     totalBookedCalls,
@@ -213,10 +185,12 @@ export async function calculateClosersMetrics(
     offerRate: liveCalls > 0 ? offersMade / liveCalls : 0,
     offerToCloseRate: offersMade > 0 ? closes / offersMade : 0,
     closeRate: liveCalls > 0 ? closes / liveCalls : 0,
-    cashPerLiveCall: liveCalls > 0 ? cashData.total / liveCalls : 0,
+    cashPerLiveCall: liveCalls > 0 ? cashCollected / liveCalls : 0,
     avgCashPerDay,
-    closedWonRevenueMTD: cashData.total,
+    closedWonRevenueMTD: cashCollected,
     callsOnCalendar,
+    reschedules,
+    reportedRevenue,
   };
 }
 
@@ -231,12 +205,14 @@ export async function getCloserPerformance(range: DateRange): Promise<CloserPerf
     by: ['teamMemberId'],
     where: {
       date: { gte: from, lte: to },
-      teamMember: { role: 'CLOSER' },
+      teamMember: { role: TeamMemberRole.CLOSER },
     },
     _sum: {
-      conversations: true, // Live Calls
-      offers: true,
+      liveCalls: true,
+      offersMade: true,
       closes: true,
+      reschedules: true,
+      revenue: true,
     },
   });
 
@@ -248,7 +224,6 @@ export async function getCloserPerformance(range: DateRange): Promise<CloserPerf
   const memberMap = new Map(members.map(m => [m.id, m]));
 
   // Get Cash by Closer
-  // We need to aggregate payments by closer
   const payments = await prisma.payment.findMany({
     where: {
       date: { gte: from, lte: to },
@@ -281,9 +256,12 @@ export async function getCloserPerformance(range: DateRange): Promise<CloserPerf
   return metrics.map(m => {
     const member = memberMap.get(m.teamMemberId);
     const name = member ? `${member.firstName} ${member.lastName}` : 'Unknown';
-    const liveCalls = Number(m._sum.conversations || 0);
-    const offersMade = Number(m._sum.offers || 0);
-    const closes = Number(m._sum.closes || 0);
+    const mSum = m._sum as any;
+    const liveCalls = Number(mSum.liveCalls || 0);
+    const offersMade = Number(mSum.offersMade || 0);
+    const closes = Number(mSum.closes || 0);
+    const reschedules = Number(mSum.reschedules || 0);
+    const reportedRevenue = Number(mSum.revenue || 0);
     const ccByRep = cashByCloser.get(m.teamMemberId) || 0;
 
     return {
@@ -295,6 +273,8 @@ export async function getCloserPerformance(range: DateRange): Promise<CloserPerf
       closePct: liveCalls > 0 ? closes / liveCalls : 0,
       ccPerLiveCall: liveCalls > 0 ? ccByRep / liveCalls : 0,
       ccByRep,
+      reschedules,
+      reportedRevenue,
     };
   }).sort((a, b) => b.liveCalls - a.liveCalls);
 }
@@ -348,33 +328,56 @@ export async function calculateSettersMetrics(
     const [firstName, ...lastNameParts] = member.split(' ');
     const lastName = lastNameParts.join(' ');
     const tm = await prisma.teamMember.findFirst({
-      where: { firstName, lastName, role: 'SETTER' },
+      where: { firstName, lastName, role: TeamMemberRole.SETTER },
     });
     teamMemberId = tm?.id;
   }
 
-  const whereMetric = {
+  const whereMetric: Prisma.DailyMetricWhereInput = {
     date: { gte: from, lte: to },
     teamMember: {
       role: TeamMemberRole.SETTER,
-      ...(teamMemberId ? { id: teamMemberId } : {}),
     },
   };
+
+  if (teamMemberId) {
+    whereMetric.teamMember = {
+      ...(whereMetric.teamMember as Prisma.TeamMemberWhereInput),
+      id: teamMemberId,
+    };
+  }
 
   const metrics = await prisma.dailyMetric.aggregate({
     where: whereMetric,
     _sum: {
-      calls: true, // Outbound Dials
-      conversations: true, // Pickups
-      booked: true, // Booked Calls
-      closes: true, // Closed Won (attributed to setter)
+      callsMade: true, // Outbound Dials
+      liveCalls: true, // Pickups
+      bookedCalls: true, // Booked Calls
+      reschedules: true,
+      revenue: true, // Reported Revenue
     },
   });
 
-  const outboundDials = Number(metrics._sum.calls || 0);
-  const pickUps = Number(metrics._sum.conversations || 0);
-  const bookedCalls = Number(metrics._sum.booked || 0);
-  const closedWon = Number(metrics._sum.closes || 0);
+  const mSum = metrics._sum as any;
+  const outboundDials = Number(mSum.callsMade || 0);
+  const pickUps = Number(mSum.liveCalls || 0);
+  const bookedCalls = Number(mSum.bookedCalls || 0);
+  const reschedules = Number(mSum.reschedules || 0);
+  const reportedRevenue = Number(mSum.revenue || 0);
+
+  // Closed Won: Count of payments attributed to setter
+  const closedWon = await prisma.payment.count({
+    where: {
+      date: { gte: from, lte: to },
+      status: 'PAID',
+      enrollment: {
+        setter: {
+          role: TeamMemberRole.SETTER,
+          ...(teamMemberId ? { id: teamMemberId } : {}),
+        },
+      },
+    },
+  });
 
   // Cash Collected (Attributed to Setters)
   const payments = await prisma.payment.aggregate({
@@ -383,7 +386,7 @@ export async function calculateSettersMetrics(
       status: 'PAID',
       enrollment: {
         setter: {
-          role: 'SETTER',
+          role: TeamMemberRole.SETTER,
           ...(teamMemberId ? { id: teamMemberId } : {}),
         },
       },
@@ -401,13 +404,14 @@ export async function calculateSettersMetrics(
     outboundDials,
     pickUps,
     bookedCalls,
-    reschedules: 0, // Not tracked in DailyMetric currently
+    reschedules,
     closedWon,
     cashCollected,
     pickUpToBookedPct: pickUps > 0 ? bookedCalls / pickUps : 0,
     cashPerDay,
     cashPerBookedCall: bookedCalls > 0 ? cashCollected / bookedCalls : 0,
     monthlyPacing,
+    reportedRevenue,
   };
 }
 
@@ -421,13 +425,13 @@ export async function getSetterPerformance(range: DateRange): Promise<SetterPerf
     by: ['teamMemberId'],
     where: {
       date: { gte: from, lte: to },
-      teamMember: { role: 'SETTER' },
+      teamMember: { role: TeamMemberRole.SETTER },
     },
     _sum: {
-      calls: true,
-      conversations: true,
-      booked: true,
-      closes: true,
+      callsMade: true,
+      liveCalls: true,
+      bookedCalls: true,
+      revenue: true,
     },
   });
 
@@ -455,17 +459,50 @@ export async function getSetterPerformance(range: DateRange): Promise<SetterPerf
     }
   }
 
+  // Closed Won by Setter (Count of payments)
+  const closedWonBySetter = await prisma.payment.groupBy({
+    by: ['enrollmentId'], // Need to group by enrollment -> setter, but prisma groupBy is limited.
+    // Easier to fetch all payments and aggregate in memory or use raw query.
+    // Using findMany approach similar to cashBySetter
+    where: {
+      date: { gte: from, lte: to },
+      status: 'PAID',
+      enrollment: { setterId: { in: memberIds } },
+    },
+    _count: { id: true },
+  });
+
+  // Re-fetch payments to count them per setter
+  const paymentsForCount = await prisma.payment.findMany({
+    where: {
+      date: { gte: from, lte: to },
+      status: 'PAID',
+      enrollment: { setterId: { in: memberIds } },
+    },
+    include: { enrollment: true },
+  });
+
+  const closedWonMap = new Map<number, number>();
+  for (const p of paymentsForCount) {
+    const sid = p.enrollment.setterId;
+    if (sid) {
+      closedWonMap.set(sid, (closedWonMap.get(sid) || 0) + 1);
+    }
+  }
+
   return metrics.map(m => {
     const member = memberMap.get(m.teamMemberId);
     const name = member ? `${member.firstName} ${member.lastName}` : 'Unknown';
+    const mSum = m._sum as any;
 
     return {
       rep: name,
-      callsMade: Number(m._sum.calls || 0),
-      pickUps: Number(m._sum.conversations || 0),
-      bookedCalls: Number(m._sum.booked || 0),
-      closedWon: Number(m._sum.closes || 0),
+      callsMade: Number(mSum.callsMade || 0),
+      pickUps: Number(mSum.liveCalls || 0),
+      bookedCalls: Number(mSum.bookedCalls || 0),
+      closedWon: closedWonMap.get(m.teamMemberId) || 0,
       ccBySetter: cashBySetter.get(m.teamMemberId) || 0,
+      reportedRevenue: Number(mSum.revenue || 0),
     };
   }).sort((a, b) => b.bookedCalls - a.bookedCalls);
 }
@@ -484,42 +521,63 @@ export async function calculateDmSettersMetrics(
     const [firstName, ...lastNameParts] = member.split(' ');
     const lastName = lastNameParts.join(' ');
     const tm = await prisma.teamMember.findFirst({
-      where: { firstName, lastName, role: 'DM_SETTER' },
+      where: { firstName, lastName, role: TeamMemberRole.DM_SETTER },
     });
     teamMemberId = tm?.id;
   }
 
-  const whereMetric = {
+  const whereMetric: Prisma.DailyMetricWhereInput = {
     date: { gte: from, lte: to },
     teamMember: {
       role: TeamMemberRole.DM_SETTER,
-      ...(teamMemberId ? { id: teamMemberId } : {}),
     },
   };
+
+  if (teamMemberId) {
+    whereMetric.teamMember = {
+      ...(whereMetric.teamMember as Prisma.TeamMemberWhereInput),
+      id: teamMemberId,
+    };
+  }
 
   const metrics = await prisma.dailyMetric.aggregate({
     where: whereMetric,
     _sum: {
-      calls: true, // DMs Sent
-      conversations: true, // Responses
-      booked: true, // Booked Calls
-      closes: true, // Closed Won
+      dmsSent: true,
+      conversationsStarted: true,
+      bookedCalls: true,
+      revenue: true,
     },
   });
 
-  const dmsOutbound = Number(metrics._sum.calls || 0);
-  const outboundResponses = Number(metrics._sum.conversations || 0);
-  const bookedCalls = Number(metrics._sum.booked || 0);
-  const closedWon = Number(metrics._sum.closes || 0);
+  const mSum = metrics._sum as any;
+  const dmsOutbound = Number(mSum.dmsSent || 0);
+  const dmsInbound = Number(mSum.conversationsStarted || 0);
+  const bookedCalls = Number(mSum.bookedCalls || 0);
+  const reportedRevenue = Number(mSum.revenue || 0);
 
-  // Cash Collected
+  // Closed Won: Count of payments attributed to DM setter
+  const closedWon = await prisma.payment.count({
+    where: {
+      date: { gte: from, lte: to },
+      status: 'PAID',
+      enrollment: {
+        setter: {
+          role: TeamMemberRole.DM_SETTER,
+          ...(teamMemberId ? { id: teamMemberId } : {}),
+        },
+      },
+    },
+  });
+
+  // Cash Collected (Attributed to DM Setters)
   const payments = await prisma.payment.aggregate({
     where: {
       date: { gte: from, lte: to },
       status: 'PAID',
       enrollment: {
         setter: {
-          role: 'DM_SETTER',
+          role: TeamMemberRole.DM_SETTER,
           ...(teamMemberId ? { id: teamMemberId } : {}),
         },
       },
@@ -533,16 +591,15 @@ export async function calculateDmSettersMetrics(
 
   return {
     dmsOutbound,
-    dmsInbound: 0, // Not tracked
+    dmsInbound,
     bookedCalls,
-    followUps: 0, // Not tracked
-    setsTaken: 0, // Not tracked
     closedWon,
     cashCollected,
-    conversationRate: dmsOutbound > 0 ? outboundResponses / dmsOutbound : 0,
-    bookingRate: outboundResponses > 0 ? bookedCalls / outboundResponses : 0,
+    conversationRate: dmsOutbound > 0 ? dmsInbound / dmsOutbound : 0,
+    bookingRate: dmsInbound > 0 ? bookedCalls / dmsInbound : 0,
     cashPerDay,
     cashPerBookedCall: bookedCalls > 0 ? cashCollected / bookedCalls : 0,
+    reportedRevenue,
   };
 }
 
@@ -556,12 +613,12 @@ export async function getDmSetterPerformance(range: DateRange): Promise<DmSetter
     by: ['teamMemberId'],
     where: {
       date: { gte: from, lte: to },
-      teamMember: { role: 'DM_SETTER' },
+      teamMember: { role: TeamMemberRole.DM_SETTER },
     },
     _sum: {
-      calls: true,
-      conversations: true,
-      booked: true,
+      dmsSent: true,
+      conversationsStarted: true,
+      bookedCalls: true,
       closes: true,
     },
   });
@@ -590,17 +647,37 @@ export async function getDmSetterPerformance(range: DateRange): Promise<DmSetter
     }
   }
 
+  // Closed Won by DM Setter
+  const paymentsForCount = await prisma.payment.findMany({
+    where: {
+      date: { gte: from, lte: to },
+      status: 'PAID',
+      enrollment: { setterId: { in: memberIds } },
+    },
+    include: { enrollment: true },
+  });
+
+  const closedWonMap = new Map<number, number>();
+  for (const p of paymentsForCount) {
+    const sid = p.enrollment.setterId;
+    if (sid) {
+      closedWonMap.set(sid, (closedWonMap.get(sid) || 0) + 1);
+    }
+  }
+
   return metrics.map(m => {
     const member = memberMap.get(m.teamMemberId);
     const name = member ? `${member.firstName} ${member.lastName}` : 'Unknown';
+    const mSum = m._sum as any;
 
     return {
       rep: name,
-      newOutboundConvos: Number(m._sum.calls || 0),
-      outboundResponses: Number(m._sum.conversations || 0),
-      totalCallsBooked: Number(m._sum.booked || 0),
-      closedWon: Number(m._sum.closes || 0),
+      newOutboundConvos: Number(mSum.dmsSent || 0),
+      outboundResponses: Number(mSum.conversationsStarted || 0),
+      totalCallsBooked: Number(mSum.bookedCalls || 0),
+      closedWon: closedWonMap.get(m.teamMemberId) || 0,
       ccByDmSetter: cashBySetter.get(m.teamMemberId) || 0,
+      reportedRevenue: Number(mSum.revenue || 0),
     };
   }).sort((a, b) => b.totalCallsBooked - a.totalCallsBooked);
 }

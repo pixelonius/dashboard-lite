@@ -77,6 +77,8 @@ export interface ClosersMetricsResponse {
   avgCashPerDay: number;
   closedWonRevenueMTD: number;
   callsOnCalendar: number;
+  reschedules: number;
+  reportedRevenue: number;
 }
 
 export interface CloserPerformance {
@@ -88,6 +90,8 @@ export interface CloserPerformance {
   closePct: number;
   ccPerLiveCall: number;
   ccByRep: number;
+  reschedules: number;
+  reportedRevenue: number;
 }
 
 export interface PaymentRow {
@@ -119,6 +123,7 @@ export interface SettersMetricsResponse {
   cashPerDay: number;
   cashPerBookedCall: number;
   monthlyPacing: number;
+  reportedRevenue: number;
 }
 
 export interface SetterPerformance {
@@ -128,20 +133,20 @@ export interface SetterPerformance {
   bookedCalls: number;
   closedWon: number;
   ccBySetter: number;
+  reportedRevenue: number;
 }
 
 export interface DmSettersMetricsResponse {
   dmsOutbound: number;
   dmsInbound: number;
   bookedCalls: number;
-  followUps: number;
-  setsTaken: number;
   closedWon: number;
   cashCollected: number;
   conversationRate: number;
   bookingRate: number;
   cashPerDay: number;
   cashPerBookedCall: number;
+  reportedRevenue: number;
 }
 
 export interface DmSetterPerformance {
@@ -151,6 +156,7 @@ export interface DmSetterPerformance {
   totalCallsBooked: number;
   closedWon: number;
   ccByDmSetter: number;
+  reportedRevenue: number;
 }
 
 export interface DmSettersResponse {

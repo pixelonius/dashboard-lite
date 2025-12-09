@@ -486,6 +486,18 @@ export default function Sales() {
         iconColor: "bg-emerald-500",
       },
       {
+        title: "Reschedules",
+        value: closersData.metrics.reschedules.toString(),
+        icon: PhoneCall,
+        iconColor: "bg-amber-500",
+      },
+      {
+        title: "Reported Revenue",
+        value: `$${closersData.metrics.reportedRevenue.toLocaleString()}`,
+        icon: DollarSign,
+        iconColor: "bg-emerald-500",
+      },
+      {
         title: "Upcoming Calls",
         value: closersData.metrics.callsOnCalendar.toString(),
         icon: PhoneCall,
@@ -551,6 +563,12 @@ export default function Sales() {
         icon: DollarSign,
         iconColor: "bg-primary",
       },
+      {
+        title: "Reported Revenue",
+        value: `$${settersData.metrics.reportedRevenue.toLocaleString()}`,
+        icon: DollarSign,
+        iconColor: "bg-emerald-500",
+      },
     ]
     : [];
 
@@ -576,16 +594,10 @@ export default function Sales() {
         iconColor: "bg-blue-500",
       },
       {
-        title: "Follow Ups",
-        value: dmSettersData.metrics.followUps.toString(),
-        icon: Target,
-        iconColor: "bg-amber-500",
-      },
-      {
-        title: "Sets Taken",
-        value: dmSettersData.metrics.setsTaken.toString(),
-        icon: Users,
-        iconColor: "bg-cyan-600",
+        title: "Reported Revenue",
+        value: `$${dmSettersData.metrics.reportedRevenue.toLocaleString()}`,
+        icon: DollarSign,
+        iconColor: "bg-emerald-500",
       },
       {
         title: "Closed Won",
@@ -660,6 +672,20 @@ export default function Sales() {
       header: "CC/Live Call",
       render: (value: number) => (
         <span className="font-mono">${value.toFixed(0)}</span>
+      ),
+    },
+    {
+      key: "reschedules",
+      header: "Reschedules",
+      render: (value: number) => <span className="font-mono">{value}</span>,
+    },
+    {
+      key: "reportedRevenue",
+      header: "Reported Rev",
+      render: (value: number) => (
+        <span className="font-mono font-semibold">
+          ${value.toLocaleString()}
+        </span>
       ),
     },
     {
@@ -797,6 +823,15 @@ export default function Sales() {
       render: (value: number) => <span className="font-mono">{value}</span>,
     },
     {
+      key: "reportedRevenue",
+      header: "Reported Rev",
+      render: (value: number) => (
+        <span className="font-mono font-semibold">
+          ${value.toLocaleString()}
+        </span>
+      ),
+    },
+    {
       key: "ccBySetter",
       header: "CC by Setter",
       render: (value: number) => (
@@ -829,6 +864,15 @@ export default function Sales() {
       key: "closedWon",
       header: "Closed Won",
       render: (value: number) => <span className="font-mono">{value}</span>,
+    },
+    {
+      key: "reportedRevenue",
+      header: "Reported Rev",
+      render: (value: number) => (
+        <span className="font-mono font-semibold">
+          ${value.toLocaleString()}
+        </span>
+      ),
     },
     {
       key: "ccByDmSetter",
