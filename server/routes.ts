@@ -15,6 +15,10 @@ import validator from "validator";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // ===== AUTH ROUTES =====
+  app.get("/api/health", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+  });
+
   app.post("/api/v1/auth/login", async (req, res, next) => {
     try {
       const { email, password } = loginSchema.parse(req.body);
