@@ -492,8 +492,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===== TEAM ROUTES =====
+  app.get("/api/reports/eod", requireAuth, async (req: AuthRequest, res, next) => {
+    try {
+      const { from, to } = dateRangeSchema.parse(req.query);
+      const role = req.query.role as TeamMemberRole;
+      if (!role || !Object.values(TeamMemberRole).includes(role)) {
+        return res.status(400).json({ error: "Valid role is required" });
+      }
 
+      const range = normalizeDateRange(from, to);
+      const reports = await salesService.getEODReports(range, role);
+      res.json({ reports });
+    } catch (error) {
+      next(error);
+    }
+  });
 
+  // Team Member Management
+  app.post("/api/team-members", requireAuth, async (req: AuthRequest, res, next) => {
+    try {
+      const { firstName, lastName, role } = req.body; // Add validation schema usage here
+      const member = await prisma.teamMember.create({
+        data: { firstName, lastName, role, active: true },
+      });
+      res.status(201).json(member);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/team-members/:id", requireAuth, async (req: AuthRequest, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { firstName, lastName, role, active } = req.body;
+      const member = await prisma.teamMember.update({
+        where: { id },
+        data: { firstName, lastName, role, active },
+      });
+      res.json(member);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/team-members/:id", requireAuth, async (req: AuthRequest, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      // Soft delete
+      const member = await prisma.teamMember.update({
+        where: { id },
+        data: { active: false },
+      });
+      res.json(member);
+    } catch (error) {
+      next(error);
+    }
+  });
 
 
   // ===== MARKETING - ADS ROUTES =====

@@ -80,3 +80,16 @@ export const dmSetterEodSchema = z.object({
   unqualifiedLeads: z.number().int().min(0, "Must be 0 or greater"),
   notes: z.string().optional(),
 });
+
+export const teamMemberSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  role: z.enum(['CLOSER', 'SETTER', 'DM_SETTER']),
+});
+
+export const updateTeamMemberSchema = z.object({
+  firstName: z.string().min(1, "First name is required").optional(),
+  lastName: z.string().min(1, "Last name is required").optional(),
+  role: z.enum(['CLOSER', 'SETTER', 'DM_SETTER']).optional(),
+  active: z.boolean().optional(),
+});

@@ -18,6 +18,7 @@ import Settings from "@/pages/Settings";
 import CloserEOD from "@/pages/CloserEOD";
 import SetterEOD from "@/pages/SetterEOD";
 import DmSetterEOD from "@/pages/DmSetterEOD";
+import EODReports from "@/pages/EODReports";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -119,6 +120,13 @@ function Router() {
         <ProtectedRoute>
           <AuthenticatedLayout>
             <Settings />
+          </AuthenticatedLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/eod-reports">
+        <ProtectedRoute allowedRoles={['ADMIN', 'SALES']}>
+          <AuthenticatedLayout>
+            <EODReports />
           </AuthenticatedLayout>
         </ProtectedRoute>
       </Route>

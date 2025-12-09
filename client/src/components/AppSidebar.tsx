@@ -42,26 +42,9 @@ const menuItems = [
     url: "/sales",
   },
   {
-    title: "Marketing",
-    icon: BarChart3,
-    url: "/marketing",
-    submenu: [
-      {
-        title: "Content",
-        url: "/marketing/content",
-        icon: FileText,
-      },
-      {
-        title: "Ad Spend",
-        url: "/marketing/ad-spend",
-        icon: TrendingUp,
-      },
-      {
-        title: "Email",
-        url: "/email",
-        icon: Mail,
-      },
-    ],
+    title: "EOD Reports",
+    icon: FileText,
+    url: "/eod-reports",
   },
   {
     title: "Settings",
@@ -69,6 +52,17 @@ const menuItems = [
     url: "/settings",
   },
 ];
+
+type MenuItem = {
+  title: string;
+  icon: any;
+  url: string;
+  submenu?: {
+    title: string;
+    url: string;
+    icon: any;
+  }[];
+};
 
 export default function AppSidebar() {
   const [location] = useLocation();
@@ -90,7 +84,7 @@ export default function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent className="px-3">
             <SidebarMenu className="gap-1">
-              {menuItems.map((item) => {
+              {(menuItems as MenuItem[]).map((item) => {
                 const isActive = location === item.url || location.startsWith(item.url + '/');
 
                 if (item.submenu) {

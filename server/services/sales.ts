@@ -882,3 +882,41 @@ export async function submitDmSetterEOD(data: {
     });
   }
 }
+
+export async function getEODReports(range: DateRange, role: TeamMemberRole) {
+  const { from, to } = range;
+
+  const metrics = await prisma.dailyMetric.findMany({
+    where: {
+      date: { gte: from, lte: to },
+      teamMember: { role },
+    },
+    include: {
+      teamMember: true,
+    },
+    orderBy: { date: 'desc' },
+  });
+
+  return metrics.map(m => ({
+    id: m.id,
+    date: formatDate(m.date),
+    name: `${m.teamMember.firstName} ${m.teamMember.lastName}`,
+    // Common
+    notes: m.notes,
+    struggles: m.struggles,
+    // Closer
+    scheduledCalls: m.scheduledCalls,
+    liveCalls: m.liveCalls,
+    offersMade: m.offersMade,
+    closes: m.closes,
+    cashCollected: Number(m.cashCollected),
+    // Setter
+    callsMade: m.callsMade,
+    bookedCalls: m.bookedCalls,
+    reschedules: m.reschedules,
+    unqualifiedLeads: m.unqualifiedLeads,
+    // DM Setter
+    dmsSent: m.dmsSent,
+    conversationsStarted: m.conversationsStarted,
+  }));
+}
