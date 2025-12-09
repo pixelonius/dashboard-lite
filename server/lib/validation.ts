@@ -46,3 +46,37 @@ export const updatePaymentAssignmentSchema = z.object({
   assignedCloserId: z.number().int().positive().nullable().optional(),
   assignedSetterId: z.number().int().positive().nullable().optional(),
 });
+
+export const closerEodSchema = z.object({
+  closerId: z.number().int().positive("Closer is required"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD)"),
+  scheduledCalls: z.number().int().min(0, "Must be 0 or greater"),
+  liveCalls: z.number().int().min(0, "Must be 0 or greater"),
+  offersMade: z.number().int().min(0, "Must be 0 or greater"),
+  closes: z.number().int().min(0, "Must be 0 or greater"),
+  cashCollected: z.number().min(0, "Must be 0 or greater"),
+  struggles: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export const setterEodSchema = z.object({
+  setterId: z.number().int().positive("Setter is required"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD)"),
+  callsMade: z.number().int().min(0, "Must be 0 or greater"),
+  liveCalls: z.number().int().min(0, "Must be 0 or greater"),
+  bookedCalls: z.number().int().min(0, "Must be 0 or greater"),
+  reschedules: z.number().int().min(0, "Must be 0 or greater"),
+  unqualifiedLeads: z.number().int().min(0, "Must be 0 or greater"),
+  notes: z.string().optional(),
+});
+
+export const dmSetterEodSchema = z.object({
+  dmSetterId: z.number().int().positive("DM Setter is required"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD)"),
+  dmsSent: z.number().int().min(0, "Must be 0 or greater"),
+  conversationsStarted: z.number().int().min(0, "Must be 0 or greater"),
+  bookedCalls: z.number().int().min(0, "Must be 0 or greater"),
+  reschedules: z.number().int().min(0, "Must be 0 or greater"),
+  unqualifiedLeads: z.number().int().min(0, "Must be 0 or greater"),
+  notes: z.string().optional(),
+});

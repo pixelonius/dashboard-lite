@@ -4,7 +4,7 @@ import { prisma } from "./lib/prisma";
 import { TeamMemberRole } from "@prisma/client";
 import { generateToken, setAuthCookie, clearAuthCookie, verifyPassword, hashPassword } from "./lib/auth";
 import { requireAuth, AuthRequest } from "./middleware/auth";
-import { loginSchema, signupSchema, dateRangeSchema, updateProfileSchema, updatePaymentAssignmentSchema } from "./lib/validation";
+import { loginSchema, signupSchema, dateRangeSchema, updateProfileSchema, updatePaymentAssignmentSchema, closerEodSchema, setterEodSchema, dmSetterEodSchema } from "./lib/validation";
 import { errorHandler } from "./lib/error-handler";
 import { normalizeDateRange, formatDate } from "./utils/date";
 import * as homeService from "./services/home";
@@ -318,6 +318,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       res.json({ members: options });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // ===== PUBLIC ROUTES =====
+  app.get("/api/public/closers", async (req, res, next) => {
+    try {
+      const members = await prisma.teamMember.findMany({
+        where: { role: TeamMemberRole.CLOSER, active: true },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
+        orderBy: { firstName: 'asc' },
+      });
+
+      const options = members.map(m => ({
+        id: m.id,
+        name: `${m.firstName} ${m.lastName}`,
+      }));
+
+      res.json({ members: options });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/public/setters", async (req, res, next) => {
+    try {
+      const members = await prisma.teamMember.findMany({
+        where: { role: TeamMemberRole.SETTER, active: true },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
+        orderBy: { firstName: 'asc' },
+      });
+
+      const options = members.map(m => ({
+        id: m.id,
+        name: `${m.firstName} ${m.lastName}`,
+      }));
+
+      res.json({ members: options });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/public/dm-setters", async (req, res, next) => {
+    try {
+      const members = await prisma.teamMember.findMany({
+        where: { role: TeamMemberRole.DM_SETTER, active: true },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
+        orderBy: { firstName: 'asc' },
+      });
+
+      const options = members.map(m => ({
+        id: m.id,
+        name: `${m.firstName} ${m.lastName}`,
+      }));
+
+      res.json({ members: options });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/sales/closer-eod", async (req, res, next) => {
+    try {
+      const data = closerEodSchema.parse(req.body);
+      const result = await salesService.submitCloserEOD(data);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/sales/setter-eod", async (req, res, next) => {
+    try {
+      const data = setterEodSchema.parse(req.body);
+      const result = await salesService.submitSetterEOD(data);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/sales/dm-setter-eod", async (req, res, next) => {
+    try {
+      const data = dmSetterEodSchema.parse(req.body);
+      const result = await salesService.submitDmSetterEOD(data);
+      res.json(result);
     } catch (error) {
       next(error);
     }

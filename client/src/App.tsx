@@ -15,6 +15,9 @@ import MarketingContent from "@/pages/MarketingContent";
 import MarketingAdSpend from "@/pages/MarketingAdSpend";
 import Email from "@/pages/Email";
 import Settings from "@/pages/Settings";
+import CloserEOD from "@/pages/CloserEOD";
+import SetterEOD from "@/pages/SetterEOD";
+import DmSetterEOD from "@/pages/DmSetterEOD";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -30,10 +33,10 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen w-full">
         <AppSidebar />
         <div className="flex flex-col flex-1 overflow-hidden">
-          <TopHeader 
-            userName={user?.name || ''} 
-            userRole={user?.role || ''} 
-            onLogout={logout} 
+          <TopHeader
+            userName={user?.name || ''}
+            userRole={user?.role || ''}
+            onLogout={logout}
           />
           <main className="flex-1 overflow-y-auto bg-background p-8">
             {children}
@@ -53,7 +56,7 @@ function Router() {
 
   const getDefaultRoute = () => {
     if (!user) return '/login';
-    
+
     switch (user.role) {
       case 'SALES':
         return '/sales';
@@ -68,6 +71,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={Login} />
+      <Route path="/closer-eod" component={CloserEOD} />
+      <Route path="/setter-eod" component={SetterEOD} />
+      <Route path="/dmsetter-eod" component={DmSetterEOD} />
       <Route path="/">
         {() => <Redirect to={getDefaultRoute()} />}
       </Route>

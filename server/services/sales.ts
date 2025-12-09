@@ -726,3 +726,159 @@ async function getCloserCash(
     mtd: Number(mtd._sum.amount || 0),
   };
 }
+
+export async function submitCloserEOD(data: {
+  closerId: number;
+  date: string;
+  scheduledCalls: number;
+  liveCalls: number;
+  offersMade: number;
+  closes: number;
+  cashCollected: number;
+  struggles?: string;
+  notes?: string;
+}) {
+  const date = new Date(data.date);
+
+  // Check if metric exists
+  const existingMetric = await prisma.dailyMetric.findFirst({
+    where: {
+      teamMemberId: data.closerId,
+      date: {
+        gte: new Date(date.setHours(0, 0, 0, 0)),
+        lt: new Date(date.setHours(23, 59, 59, 999)),
+      },
+    },
+  });
+
+  if (existingMetric) {
+    return prisma.dailyMetric.update({
+      where: { id: existingMetric.id },
+      data: {
+        scheduledCalls: data.scheduledCalls,
+        liveCalls: data.liveCalls,
+        offersMade: data.offersMade,
+        closes: data.closes,
+        cashCollected: data.cashCollected,
+        struggles: data.struggles,
+        notes: data.notes,
+      },
+    });
+  } else {
+    return prisma.dailyMetric.create({
+      data: {
+        teamMemberId: data.closerId,
+        date: new Date(data.date),
+        scheduledCalls: data.scheduledCalls,
+        liveCalls: data.liveCalls,
+        offersMade: data.offersMade,
+        closes: data.closes,
+        cashCollected: data.cashCollected,
+        struggles: data.struggles,
+        notes: data.notes,
+      },
+    });
+  }
+}
+
+export async function submitSetterEOD(data: {
+  setterId: number;
+  date: string;
+  callsMade: number;
+  liveCalls: number;
+  bookedCalls: number;
+  reschedules: number;
+  unqualifiedLeads: number;
+  notes?: string;
+}) {
+  const date = new Date(data.date);
+
+  // Check if metric exists
+  const existingMetric = await prisma.dailyMetric.findFirst({
+    where: {
+      teamMemberId: data.setterId,
+      date: {
+        gte: new Date(date.setHours(0, 0, 0, 0)),
+        lt: new Date(date.setHours(23, 59, 59, 999)),
+      },
+    },
+  });
+
+  if (existingMetric) {
+    return prisma.dailyMetric.update({
+      where: { id: existingMetric.id },
+      data: {
+        callsMade: data.callsMade,
+        liveCalls: data.liveCalls,
+        bookedCalls: data.bookedCalls,
+        reschedules: data.reschedules,
+        unqualifiedLeads: data.unqualifiedLeads,
+        notes: data.notes,
+      },
+    });
+  } else {
+    return prisma.dailyMetric.create({
+      data: {
+        teamMemberId: data.setterId,
+        date: new Date(data.date),
+        callsMade: data.callsMade,
+        liveCalls: data.liveCalls,
+        bookedCalls: data.bookedCalls,
+        reschedules: data.reschedules,
+        unqualifiedLeads: data.unqualifiedLeads,
+        notes: data.notes,
+      },
+    });
+  }
+}
+
+export async function submitDmSetterEOD(data: {
+  dmSetterId: number;
+  date: string;
+  dmsSent: number;
+  conversationsStarted: number;
+  bookedCalls: number;
+  reschedules: number;
+  unqualifiedLeads: number;
+  notes?: string;
+}) {
+  const date = new Date(data.date);
+
+  // Check if metric exists
+  const existingMetric = await prisma.dailyMetric.findFirst({
+    where: {
+      teamMemberId: data.dmSetterId,
+      date: {
+        gte: new Date(date.setHours(0, 0, 0, 0)),
+        lt: new Date(date.setHours(23, 59, 59, 999)),
+      },
+    },
+  });
+
+  if (existingMetric) {
+    return prisma.dailyMetric.update({
+      where: { id: existingMetric.id },
+      data: {
+        dmsSent: data.dmsSent,
+        conversationsStarted: data.conversationsStarted,
+        bookedCalls: data.bookedCalls,
+        reschedules: data.reschedules,
+        unqualifiedLeads: data.unqualifiedLeads,
+        notes: data.notes,
+      },
+    });
+  } else {
+    return prisma.dailyMetric.create({
+      data: {
+        teamMemberId: data.dmSetterId,
+        date: new Date(data.date),
+        dmsSent: data.dmsSent,
+        conversationsStarted: data.conversationsStarted,
+        bookedCalls: data.bookedCalls,
+        reschedules: data.reschedules,
+        unqualifiedLeads: data.unqualifiedLeads,
+        notes: data.notes,
+      },
+    });
+  }
+}
