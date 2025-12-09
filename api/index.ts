@@ -4,6 +4,11 @@ import { app } from "../server/app";
 let routesRegistered = false;
 
 export default async function handler(req: any, res: any) {
+    // Health check endpoint to verify function execution
+    if (req.url === '/api/health') {
+        return res.status(200).json({ status: 'ok', time: new Date().toISOString() });
+    }
+
     try {
         if (!routesRegistered) {
             const { registerRoutes } = await import("../server/routes");
