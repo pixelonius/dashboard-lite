@@ -9,6 +9,11 @@
       "destination": "/index.html"
     }
   ],
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": "server/**"
+    }
+  },
   "buildCommand": "npm run build",
   "outputDirectory": "dist/public",
   "framework": "vite"
