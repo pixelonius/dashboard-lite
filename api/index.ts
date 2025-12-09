@@ -1,5 +1,5 @@
-import { app } from "./app";
-import { registerRoutes } from "./routes";
+import { app } from "../server/app";
+import { registerRoutes } from "../server/routes";
 
 // Initialize routes lazily
 let routesRegistered = false;
