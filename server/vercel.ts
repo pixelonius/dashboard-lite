@@ -1,4 +1,5 @@
-import { app } from "../server/app";
+import { app } from "./app";
+import { registerRoutes } from "./routes";
 
 // Initialize routes lazily
 let routesRegistered = false;
@@ -11,7 +12,6 @@ export default async function handler(req: any, res: any) {
 
     try {
         if (!routesRegistered) {
-            const { registerRoutes } = await import("../server/routes");
             await registerRoutes(app);
             routesRegistered = true;
         }
