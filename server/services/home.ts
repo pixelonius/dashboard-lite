@@ -5,8 +5,8 @@
 import { prisma } from '../lib/prisma';
 import type { DateRange } from '../utils/date';
 import { formatDate } from '../utils/date';
-import type { HomeCardsResponse, CashBySourceItem, Transaction } from '../types/api';
-import { PaymentStatus, EnrollmentStatus, InstallmentStatus } from '@prisma/client';
+import type { HomeCardsResponse, CashBySourceItem, Transaction, MetricBreakdown } from '../types/api';
+import { PaymentStatus, EnrollmentStatus, InstallmentStatus, TeamMemberRole } from '@prisma/client';
 
 /**
  * Calculate all homepage cards metrics
@@ -164,6 +164,73 @@ export async function getCashCollectedBySource(range: DateRange): Promise<CashBy
     source,
     amount,
   }));
+}
+
+/**
+ * Get aggregated metrics for Home Pie Charts
+ */
+export async function getHomePieCharts(range: DateRange) {
+  const { from, to } = range;
+
+  // 1. Closers (Closed Calls -> Closes)
+  const closersData = await prisma.dailyMetric.groupBy({
+    by: ['teamMemberId'],
+    where: {
+      date: { gte: from, lte: to },
+      teamMember: { role: TeamMemberRole.CLOSER },
+    },
+    _sum: { closes: true },
+  });
+
+  // 2. Setters (Calls Made)
+  const settersData = await prisma.dailyMetric.groupBy({
+    by: ['teamMemberId'],
+    where: {
+      date: { gte: from, lte: to },
+      teamMember: { role: TeamMemberRole.SETTER },
+    },
+    _sum: { callsMade: true },
+  });
+
+  // 3. DM Setters (DM Sent)
+  const dmSettersData = await prisma.dailyMetric.groupBy({
+    by: ['teamMemberId'],
+    where: {
+      date: { gte: from, lte: to },
+      teamMember: { role: TeamMemberRole.DM_SETTER },
+    },
+    _sum: { dmsSent: true },
+  });
+
+  // Fetch all team members to map names
+  const allIds = new Set([
+    ...closersData.map(d => d.teamMemberId),
+    ...settersData.map(d => d.teamMemberId),
+    ...dmSettersData.map(d => d.teamMemberId),
+  ]);
+
+  const teamMembers = await prisma.teamMember.findMany({
+    where: { id: { in: Array.from(allIds) } },
+    select: { id: true, firstName: true, lastName: true },
+  });
+
+  const memberMap = new Map(teamMembers.map(m => [m.id, `${m.firstName} ${m.lastName}`]));
+
+  const mapToBreakdown = (data: any[], valueKey: string): MetricBreakdown[] => {
+    return data
+      .map(item => ({
+        name: memberMap.get(item.teamMemberId) || 'Unknown',
+        value: Number(item._sum[valueKey] || 0),
+      }))
+      .filter(item => item.value > 0)
+      .sort((a, b) => b.value - a.value);
+  };
+
+  return {
+    closedCallsByCloser: mapToBreakdown(closersData, 'closes'),
+    callsMadeBySetter: mapToBreakdown(settersData, 'callsMade'),
+    dmsSentByDmSetter: mapToBreakdown(dmSettersData, 'dmsSent'),
+  };
 }
 
 /**

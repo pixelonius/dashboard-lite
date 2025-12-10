@@ -13,12 +13,17 @@ import {
   EmailSummaryResponse,
   HomeTransactionsResponse
 } from '@/types/api';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Home() {
   const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     to: new Date(),
   });
+
+  const [metricType, setMetricType] = useState<'closed' | 'calls' | 'dms'>('closed');
+  const COLORS = ['#8b5cf6', '#ec4899', '#06b6d4', '#10b981', '#f59e0b', '#3b82f6', '#6366f1', '#a855f7'];
 
   // Fetch initial home summary data (cards + charts)
   const { data: summary, isLoading: summaryLoading } = useQuery<HomeSummaryResponse>({
@@ -286,6 +291,16 @@ export default function Home() {
     ? summary.charts.cashCollectedBySource.map((item: any) => item.source)
     : [];
 
+  const pieData = (() => {
+    if (!summary?.charts) return [];
+    switch (metricType) {
+      case 'closed': return summary.charts.closedCallsByCloser || [];
+      case 'calls': return summary.charts.callsMadeBySetter || [];
+      case 'dms': return summary.charts.dmsSentByDmSetter || [];
+      default: return [];
+    }
+  })();
+
   // Prepare transactions table
   const transactionsColumns = [
     { key: 'date', header: 'Date' },
@@ -361,8 +376,8 @@ export default function Home() {
 
 
 
-      {/* Cash Collected by Source Chart */}
-      {chartSeries.length > 0 && (
+      {/* Cash Collected by Source Chart - COMMENTED OUT AS PER REQUEST */}
+      {/* {chartSeries.length > 0 && (
         <TimeSeriesChart
           title="Cash Collected by Source"
           series={chartSeries}
@@ -370,7 +385,60 @@ export default function Home() {
           type="bar"
           height={320}
         />
-      )}
+      )} */}
+
+      {/* New Metrics Pie Chart */}
+      <div className="bg-card text-card-foreground p-6 rounded-lg shadow-sm border">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold">
+            {metricType === 'closed' && 'Closed Calls by Closer'}
+            {metricType === 'calls' && 'Calls Made by Setter'}
+            {metricType === 'dms' && 'DMs Sent by DM Setter'}
+          </h3>
+          <Select value={metricType} onValueChange={(v: any) => setMetricType(v)}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select Metric" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="closed">Closed Calls (Closers)</SelectItem>
+              <SelectItem value="calls">Calls Made (Setters)</SelectItem>
+              <SelectItem value="dms">DM Sent (DM Setters)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="h-[320px] w-full flex items-center justify-center">
+          {pieData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value: number) => [value, 'Count']}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-muted-foreground h-full">
+              <p>No data available for this period</p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Recent Transactions Table */}
       <div>

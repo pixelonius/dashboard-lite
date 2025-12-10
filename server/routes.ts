@@ -161,7 +161,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const [cards, charts] = await Promise.all([
         homeService.calculateHomeCards(range),
-        homeService.getCashCollectedBySource(range),
+        // homeService.getCashCollectedBySource(range), // Commented out as per request
+        homeService.getHomePieCharts(range),
       ]);
 
       res.json({
@@ -172,7 +173,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         cards,
         charts: {
-          cashCollectedBySource: charts,
+          // cashCollectedBySource: charts[0], // Commented out
+          cashCollectedBySource: [], // Return empty to satisfy type if needed, or update type. I updated type but I'll leave it empty/mocked to avoid frontend errors before I update frontend.
+          ...charts
         },
       });
     } catch (error) {

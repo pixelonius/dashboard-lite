@@ -27,11 +27,19 @@ export interface CashBySourceItem {
   amount: number;
 }
 
+export interface MetricBreakdown {
+  name: string;
+  value: number;
+}
+
 export interface HomeSummaryResponse {
   range: DateRangeInfo;
   cards: HomeCardsResponse;
   charts: {
     cashCollectedBySource: CashBySourceItem[];
+    closedCallsByCloser: MetricBreakdown[];
+    callsMadeBySetter: MetricBreakdown[];
+    dmsSentByDmSetter: MetricBreakdown[];
   };
 }
 
