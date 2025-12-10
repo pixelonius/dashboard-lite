@@ -77,7 +77,7 @@ export interface ClosersMetricsResponse {
   avgCashPerDay: number;
   closedWonRevenueMTD: number;
   callsOnCalendar: number;
-  reschedules: number;
+  // reschedules: number;
   reportedRevenue: number;
 }
 
@@ -90,7 +90,7 @@ export interface CloserPerformance {
   closePct: number;
   ccPerLiveCall: number;
   ccByRep: number;
-  reschedules: number;
+  //reschedules: number;
   reportedRevenue: number;
 }
 

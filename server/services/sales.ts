@@ -156,7 +156,7 @@ export async function calculateClosersMetrics(
   const offersMade = Number(mSum.offersMade || 0);
   const closes = Number(mSum.closes || 0);
   const totalBookedCalls = Number(mSum.scheduledCalls || 0);
-  const reschedules = Number(mSum.reschedules || 0);
+  //const reschedules = Number(mSum.reschedules || 0);
   const reportedRevenue = Number(mSum.cashCollected || 0);
 
   // Cash
@@ -189,7 +189,6 @@ export async function calculateClosersMetrics(
     avgCashPerDay,
     closedWonRevenueMTD: cashCollected,
     callsOnCalendar,
-    reschedules,
     reportedRevenue,
   };
 }
@@ -260,7 +259,7 @@ export async function getCloserPerformance(range: DateRange): Promise<CloserPerf
     const liveCalls = Number(mSum.liveCalls || 0);
     const offersMade = Number(mSum.offersMade || 0);
     const closes = Number(mSum.closes || 0);
-    const reschedules = Number(mSum.reschedules || 0);
+    //const reschedules = Number(mSum.reschedules || 0);
     const reportedRevenue = Number(mSum.cashCollected || 0);
     const ccByRep = cashByCloser.get(m.teamMemberId) || 0;
 
@@ -273,7 +272,7 @@ export async function getCloserPerformance(range: DateRange): Promise<CloserPerf
       closePct: liveCalls > 0 ? closes / liveCalls : 0,
       ccPerLiveCall: liveCalls > 0 ? ccByRep / liveCalls : 0,
       ccByRep,
-      reschedules,
+      //reschedules,
       reportedRevenue,
     };
   }).sort((a, b) => b.liveCalls - a.liveCalls);

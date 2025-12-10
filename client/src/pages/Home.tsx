@@ -128,27 +128,27 @@ export default function Home() {
       loading: summaryLoading,
       variant: 'gradient-cyan' as const,
     },
-    {
-      title: 'Leads Captured',
-      value: summary?.cards.leadsCaptured?.toString() || '0',
-      icon: Target,
-      loading: summaryLoading,
-      variant: 'gradient-pink' as const,
-    },
-    {
-      title: 'Ad Spend',
-      value: summary ? `$${summary.cards.adSpend.toLocaleString()}` : '$0',
-      icon: TrendingDown,
-      iconColor: 'text-orange-500',
-      loading: summaryLoading,
-    },
-    {
-      title: 'Overdue Payments',
-      value: summary ? `$${summary.cards.overduePayments.total.toLocaleString()} (${summary.cards.overduePayments.count})` : '$0 (0)',
-      icon: AlertCircle,
-      iconColor: 'text-red-500',
-      loading: summaryLoading,
-    },
+    // {
+    //   title: 'Leads Captured',
+    //   value: summary?.cards.leadsCaptured?.toString() || '0',
+    //   icon: Target,
+    //   loading: summaryLoading,
+    //   variant: 'gradient-pink' as const,
+    // },
+    // {
+    //   title: 'Ad Spend',
+    //   value: summary ? `$${summary.cards.adSpend.toLocaleString()}` : '$0',
+    //   icon: TrendingDown,
+    //   iconColor: 'text-orange-500',
+    //   loading: summaryLoading,
+    // },
+    // {
+    //   title: 'Overdue Payments',
+    //   value: summary ? `$${summary.cards.overduePayments.total.toLocaleString()} (${summary.cards.overduePayments.count})` : '$0 (0)',
+    //   icon: AlertCircle,
+    //   iconColor: 'text-red-500',
+    //   loading: summaryLoading,
+    // },
   ]
 
   const salesKpiData = [
@@ -343,7 +343,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Marketing KPI Cards */}
+      {/* Marketing KPI Cards
       <div> <h2 className="text-xl font-semibold" data-testid="text-page-title">Marketing Summary</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {marketingKpiData.map((kpi, idx) => (
@@ -357,7 +357,7 @@ export default function Home() {
             />
           ))}
         </div>
-      </div>
+      </div> */}
 
 
 

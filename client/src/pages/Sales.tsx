@@ -485,12 +485,12 @@ export default function Sales() {
         icon: DollarSign,
         iconColor: "bg-emerald-500",
       },
-      {
-        title: "Reschedules",
-        value: closersData.metrics.reschedules.toString(),
-        icon: PhoneCall,
-        iconColor: "bg-amber-500",
-      },
+      // {
+      //   title: "Reschedules",
+      //   value: closersData.metrics.reschedules.toString(),
+      //   icon: PhoneCall,
+      //   iconColor: "bg-amber-500",
+      // },
       {
         title: "Reported Revenue",
         value: `$${closersData.metrics.reportedRevenue.toLocaleString()}`,
@@ -563,12 +563,12 @@ export default function Sales() {
         icon: DollarSign,
         iconColor: "bg-primary",
       },
-      {
-        title: "Reported Revenue",
-        value: `$${settersData.metrics.reportedRevenue.toLocaleString()}`,
-        icon: DollarSign,
-        iconColor: "bg-emerald-500",
-      },
+      // {
+      //   title: "Reported Revenue",
+      //   value: `$${settersData.metrics.reportedRevenue.toLocaleString()}`,
+      //   icon: DollarSign,
+      //   iconColor: "bg-emerald-500",
+      // },
     ]
     : [];
 
