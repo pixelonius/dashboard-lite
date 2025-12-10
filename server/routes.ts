@@ -1,10 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { prisma } from "./lib/prisma";
-import { TeamMemberRole } from "@prisma/client";
+import { TeamMemberRole, PaymentPlanType, PaymentStatus, EnrollmentStatus, InstallmentStatus } from "@prisma/client";
 import { generateToken, setAuthCookie, clearAuthCookie, verifyPassword, hashPassword } from "./lib/auth";
 import { requireAuth, AuthRequest } from "./middleware/auth";
-import { loginSchema, signupSchema, dateRangeSchema, updateProfileSchema, updatePaymentAssignmentSchema, closerEodSchema, setterEodSchema, dmSetterEodSchema } from "./lib/validation";
+import { loginSchema, signupSchema, dateRangeSchema, updateProfileSchema, updatePaymentAssignmentSchema, closerEodSchema, setterEodSchema, dmSetterEodSchema, newPaymentSchema, programSchema, updateProgramSchema } from "./lib/validation";
 import { errorHandler } from "./lib/error-handler";
 import { normalizeDateRange, formatDate } from "./utils/date";
 import * as homeService from "./services/home";
@@ -465,6 +465,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/sales/new-payment", async (req, res, next) => {
+    try {
+      const data = newPaymentSchema.parse(req.body);
+
+      // Split name (simple split)
+      const nameParts = data.fullName.trim().split(/\s+/);
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+
+      // 1. Find or Create Student
+      const student = await prisma.student.upsert({
+        where: { email: data.email },
+        update: {
+          firstName,
+          lastName,
+          phone: data.phone || undefined, // Update phone if provided
+        },
+        create: {
+          email: data.email,
+          firstName,
+          lastName,
+          phone: data.phone,
+        },
+      });
+
+      // 2. Create Enrollment
+      const enrollment = await prisma.enrollment.create({
+        data: {
+          studentId: student.id,
+          programId: data.programId,
+          planType: data.planType as PaymentPlanType,
+          contractValue: data.totalValue,
+          status: EnrollmentStatus.ACTIVE,
+          startDate: new Date(data.startDate),
+        },
+      });
+
+      const promises = [];
+
+      // 3. Handle PIF
+      if (data.planType === 'PIF') {
+        const payment = await prisma.payment.create({
+          data: {
+            enrollmentId: enrollment.id,
+            amount: data.totalValue,
+            date: new Date(data.startDate),
+            status: PaymentStatus.PAID,
+            email: data.email,
+            method: 'Form Submission',
+          },
+        });
+        promises.push(payment);
+      }
+
+      // 4. Handle SPLIT
+      if (data.planType === 'SPLIT' && data.installments && data.installments.length > 0) {
+        // Create installments
+        for (let i = 0; i < data.installments.length; i++) {
+          const instData = data.installments[i];
+          const isFirst = i === 0;
+
+          // For the first installment, we create a PAID Payment immediately
+          let paymentId = null;
+          if (isFirst) {
+            const payment = await prisma.payment.create({
+              data: {
+                enrollmentId: enrollment.id,
+                amount: instData.amount,
+                date: new Date(instData.dueDate),
+                status: PaymentStatus.PAID,
+                email: data.email,
+                method: 'Form Submission - Installment 1',
+              }
+            });
+            paymentId = payment.id;
+          }
+
+          // Create the Installment record
+          const installment = await prisma.installment.create({
+            data: {
+              enrollmentId: enrollment.id,
+              amount: instData.amount,
+              dueDate: new Date(instData.dueDate),
+              status: isFirst ? InstallmentStatus.PAID : InstallmentStatus.PENDING,
+              paymentId: paymentId, // Link if paid
+            }
+          });
+          promises.push(installment);
+        }
+      }
+
+      await Promise.all(promises);
+
+      res.status(201).json({ success: true, studentId: student.id, enrollmentId: enrollment.id });
+    } catch (error) {
+      next(error);
+    }
+  });
+
 
 
   // ===== PRODUCTS ROUTES =====
@@ -493,6 +592,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next(error);
     }
   });
+
+  // ===== PROGRAMS ROUTES =====
+  app.get("/api/programs", requireAuth, async (req: AuthRequest, res, next) => {
+    try {
+      // User requested "Return all active programs"
+      const programs = await prisma.program.findMany({
+        where: { active: true },
+        select: {
+          id: true,
+          name: true,
+          active: true,
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      });
+      res.json({ programs });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/public/programs", async (req, res, next) => {
+    try {
+      const programs = await prisma.program.findMany({
+        where: { active: true },
+        select: {
+          id: true,
+          name: true,
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      });
+      res.json({ programs });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/programs", requireAuth, async (req: AuthRequest, res, next) => {
+    try {
+      const { name, active } = programSchema.parse(req.body);
+      const program = await prisma.program.create({
+        data: {
+          name,
+          active: active !== undefined ? active : true,
+          price: 0 // Required by DB, defaulting to 0 for now as form handles value manually
+        },
+      });
+      res.status(201).json(program);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/programs/:id", requireAuth, async (req: AuthRequest, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { name, active } = updateProgramSchema.parse(req.body);
+      const program = await prisma.program.update({
+        where: { id },
+        data: {
+          ...(name && { name }),
+          ...(active !== undefined && { active }),
+        },
+      });
+      res.json(program);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/programs/:id", requireAuth, async (req: AuthRequest, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      // Soft delete
+      const program = await prisma.program.update({
+        where: { id },
+        data: { active: false },
+      });
+      res.json(program);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // ===== PRODUCTS ROUTES (Public/Frontend usage of programs) =====
 
   // ===== TEAM ROUTES =====
   app.get("/api/reports/eod", requireAuth, async (req: AuthRequest, res, next) => {

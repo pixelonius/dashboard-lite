@@ -93,3 +93,27 @@ export const updateTeamMemberSchema = z.object({
   role: z.enum(['CLOSER', 'SETTER', 'DM_SETTER']).optional(),
   active: z.boolean().optional(),
 });
+
+export const newPaymentSchema = z.object({
+  fullName: z.string().min(1, "Full name is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().optional(),
+  programId: z.number().int().positive("Program is required"),
+  planType: z.enum(['PIF', 'SPLIT']),
+  totalValue: z.number().min(0, "Total value must be positive"),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+  installments: z.array(z.object({
+    amount: z.number().min(0),
+    dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+  })).optional(),
+});
+
+export const programSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  active: z.boolean().optional(),
+});
+
+export const updateProgramSchema = z.object({
+  name: z.string().min(1, "Name is required").optional(),
+  active: z.boolean().optional(),
+});

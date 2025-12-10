@@ -19,6 +19,7 @@ import CloserEOD from "@/pages/CloserEOD";
 import SetterEOD from "@/pages/SetterEOD";
 import DmSetterEOD from "@/pages/DmSetterEOD";
 import EODReports from "@/pages/EODReports";
+import NewPaymentForm from "@/pages/NewPaymentForm";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -75,6 +76,7 @@ function Router() {
       <Route path="/closer-eod" component={CloserEOD} />
       <Route path="/setter-eod" component={SetterEOD} />
       <Route path="/dmsetter-eod" component={DmSetterEOD} />
+      <Route path="/new-payment" component={NewPaymentForm} />
       <Route path="/">
         {() => <Redirect to={getDefaultRoute()} />}
       </Route>
