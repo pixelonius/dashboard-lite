@@ -632,6 +632,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== PUBLIC INSTALLMENT ROUTES =====
+  app.get("/api/public/enrollments/split", async (req, res, next) => {
+    try {
+      const enrollments = await prisma.enrollment.findMany({
+        where: {
+          planType: 'SPLIT',
+          status: 'ACTIVE',
+        },
+        include: {
+          student: true,
+          program: true,
+        },
+        orderBy: {
+          student: { lastName: 'asc' }
+        }
+      });
+
+      const formatted = enrollments.map(e => ({
+        id: e.id,
+        label: `${e.program.name} - ${e.student.firstName} ${e.student.lastName}`,
+      }));
+
+      res.json({ enrollments: formatted });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/public/enrollments/:id/installments", async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const installments = await prisma.installment.findMany({
+        where: { enrollmentId: id },
+        orderBy: { dueDate: 'asc' },
+      });
+      res.json({ installments });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/public/installments/:id/pay", async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+
+      // 1. Get the installment
+      const installment = await prisma.installment.findUnique({
+        where: { id },
+        include: { enrollment: { include: { student: true } } }
+      });
+
+      if (!installment) {
+        return res.status(404).json({ error: "Installment not found" });
+      }
+
+      if (installment.status === 'PAID') {
+        return res.status(400).json({ error: "Installment is already paid" });
+      }
+
+      // 2. Create Payment Record first
+      const payment = await prisma.payment.create({
+        data: {
+          enrollmentId: installment.enrollmentId,
+          amount: installment.amount,
+          date: new Date(),
+          status: PaymentStatus.PAID,
+          email: installment.enrollment.student.email, // Use student email
+          method: 'Online Installment Payment',
+        }
+      });
+
+      // 3. Update Installment
+      const updatedInstallment = await prisma.installment.update({
+        where: { id },
+        data: {
+          status: InstallmentStatus.PAID,
+          paymentId: payment.id,
+        }
+      });
+
+      res.json({ success: true, installment: updatedInstallment });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.post("/api/programs", requireAuth, async (req: AuthRequest, res, next) => {
     try {
       const { name, active } = programSchema.parse(req.body);
