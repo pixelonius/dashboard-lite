@@ -147,7 +147,7 @@ export async function calculateClosersMetrics(
       closes: true,
       scheduledCalls: true, // For Total Booked Calls
       reschedules: true,
-      revenue: true, // Reported Revenue
+      cashCollected: true, // Reported Revenue from EOD cash collected
     },
   });
 
@@ -157,7 +157,7 @@ export async function calculateClosersMetrics(
   const closes = Number(mSum.closes || 0);
   const totalBookedCalls = Number(mSum.scheduledCalls || 0);
   const reschedules = Number(mSum.reschedules || 0);
-  const reportedRevenue = Number(mSum.revenue || 0);
+  const reportedRevenue = Number(mSum.cashCollected || 0);
 
   // Cash
   const cashData = await getCloserCash(from, to, teamMemberId);
@@ -212,7 +212,7 @@ export async function getCloserPerformance(range: DateRange): Promise<CloserPerf
       offersMade: true,
       closes: true,
       reschedules: true,
-      revenue: true,
+      cashCollected: true,
     },
   });
 
@@ -261,7 +261,7 @@ export async function getCloserPerformance(range: DateRange): Promise<CloserPerf
     const offersMade = Number(mSum.offersMade || 0);
     const closes = Number(mSum.closes || 0);
     const reschedules = Number(mSum.reschedules || 0);
-    const reportedRevenue = Number(mSum.revenue || 0);
+    const reportedRevenue = Number(mSum.cashCollected || 0);
     const ccByRep = cashByCloser.get(m.teamMemberId) || 0;
 
     return {
@@ -354,7 +354,7 @@ export async function calculateSettersMetrics(
       liveCalls: true, // Pickups
       bookedCalls: true, // Booked Calls
       reschedules: true,
-      revenue: true, // Reported Revenue
+      cashCollected: true, // Reported Revenue from EOD cash collected
     },
   });
 
@@ -363,7 +363,7 @@ export async function calculateSettersMetrics(
   const pickUps = Number(mSum.liveCalls || 0);
   const bookedCalls = Number(mSum.bookedCalls || 0);
   const reschedules = Number(mSum.reschedules || 0);
-  const reportedRevenue = Number(mSum.revenue || 0);
+  const reportedRevenue = Number(mSum.cashCollected || 0);
 
   // Closed Won: Count of payments attributed to setter
   const closedWon = await prisma.payment.count({
@@ -431,7 +431,7 @@ export async function getSetterPerformance(range: DateRange): Promise<SetterPerf
       callsMade: true,
       liveCalls: true,
       bookedCalls: true,
-      revenue: true,
+      cashCollected: true,
     },
   });
 
@@ -502,7 +502,7 @@ export async function getSetterPerformance(range: DateRange): Promise<SetterPerf
       bookedCalls: Number(mSum.bookedCalls || 0),
       closedWon: closedWonMap.get(m.teamMemberId) || 0,
       ccBySetter: cashBySetter.get(m.teamMemberId) || 0,
-      reportedRevenue: Number(mSum.revenue || 0),
+      reportedRevenue: Number(mSum.cashCollected || 0),
     };
   }).sort((a, b) => b.bookedCalls - a.bookedCalls);
 }
@@ -546,7 +546,7 @@ export async function calculateDmSettersMetrics(
       dmsSent: true,
       conversationsStarted: true,
       bookedCalls: true,
-      revenue: true,
+      cashCollected: true,
     },
   });
 
@@ -554,7 +554,7 @@ export async function calculateDmSettersMetrics(
   const dmsOutbound = Number(mSum.dmsSent || 0);
   const dmsInbound = Number(mSum.conversationsStarted || 0);
   const bookedCalls = Number(mSum.bookedCalls || 0);
-  const reportedRevenue = Number(mSum.revenue || 0);
+  const reportedRevenue = Number(mSum.cashCollected || 0);
 
   // Closed Won: Count of payments attributed to DM setter
   const closedWon = await prisma.payment.count({
@@ -677,7 +677,7 @@ export async function getDmSetterPerformance(range: DateRange): Promise<DmSetter
       totalCallsBooked: Number(mSum.bookedCalls || 0),
       closedWon: closedWonMap.get(m.teamMemberId) || 0,
       ccByDmSetter: cashBySetter.get(m.teamMemberId) || 0,
-      reportedRevenue: Number(mSum.revenue || 0),
+      reportedRevenue: Number(mSum.cashCollected || 0),
     };
   }).sort((a, b) => b.totalCallsBooked - a.totalCallsBooked);
 }
@@ -760,6 +760,7 @@ export async function submitCloserEOD(data: {
         offersMade: data.offersMade,
         closes: data.closes,
         cashCollected: data.cashCollected,
+        revenue: data.cashCollected,
         struggles: data.struggles,
         notes: data.notes,
       },
@@ -774,6 +775,7 @@ export async function submitCloserEOD(data: {
         offersMade: data.offersMade,
         closes: data.closes,
         cashCollected: data.cashCollected,
+        revenue: data.cashCollected,
         struggles: data.struggles,
         notes: data.notes,
       },
