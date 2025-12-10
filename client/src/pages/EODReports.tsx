@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Copy, Users, Loader2 } from "lucide-react";
 import { format, subDays } from "date-fns";
 import ManageTeamModal from "@/components/ManageTeamModal";
+import EODDetailsModal from "@/components/EODDetailsModal";
 
 export default function EODReports() {
     const { toast } = useToast();
@@ -24,6 +25,8 @@ export default function EODReports() {
         to: new Date(),
     });
     const [activeTab, setActiveTab] = useState<"CLOSER" | "SETTER" | "DM_SETTER">("CLOSER");
+    const [selectedReport, setSelectedReport] = useState<any>(null);
+    const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
     const { data: reports, isLoading } = useQuery({
         queryKey: ["/api/reports/eod", activeTab, dateRange],
@@ -53,6 +56,11 @@ export default function EODReports() {
             title: "Link Copied",
             description: "EOD Form link copied to clipboard",
         });
+    };
+
+    const handleRowClick = (report: any) => {
+        setSelectedReport(report);
+        setIsDetailsOpen(true);
     };
 
     const renderTableHeaders = () => {
@@ -154,17 +162,28 @@ export default function EODReports() {
             </div>
 
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <TabsList className="bg-white/5 border border-white/10">
                         <TabsTrigger value="CLOSER">Closers</TabsTrigger>
                         <TabsTrigger value="SETTER">Setters</TabsTrigger>
                         <TabsTrigger value="DM_SETTER">DM Setters</TabsTrigger>
                     </TabsList>
 
-                    <Button variant="outline" onClick={copyFormLink} className="gap-2">
-                        <Copy className="h-4 w-4" />
-                        Copy EOD Form Link
-                    </Button>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <ManageTeamModal
+                            role={activeTab}
+                            trigger={
+                                <Button variant="secondary" className="gap-2 flex-1 sm:flex-none">
+                                    <Users className="h-4 w-4" />
+                                    Manage {activeTab === "DM_SETTER" ? "DM Setters" : activeTab.charAt(0) + activeTab.slice(1).toLowerCase() + "s"}
+                                </Button>
+                            }
+                        />
+                        <Button variant="outline" onClick={copyFormLink} className="gap-2 flex-1 sm:flex-none">
+                            <Copy className="h-4 w-4" />
+                            Copy Link
+                        </Button>
+                    </div>
                 </div>
 
                 <Card className="border-white/10 bg-card/40 backdrop-blur-xl">
@@ -196,7 +215,11 @@ export default function EODReports() {
                                         </TableRow>
                                     ) : (
                                         reports?.map((row: any) => (
-                                            <TableRow key={row.id} className="hover:bg-white/5 border-white/10">
+                                            <TableRow
+                                                key={row.id}
+                                                className="hover:bg-white/5 border-white/10 cursor-pointer transition-colors"
+                                                onClick={() => handleRowClick(row)}
+                                            >
                                                 {renderRowCells(row)}
                                             </TableRow>
                                         ))
@@ -206,19 +229,14 @@ export default function EODReports() {
                         </div>
                     </CardContent>
                 </Card>
-
-                <div className="flex justify-center">
-                    <ManageTeamModal
-                        role={activeTab}
-                        trigger={
-                            <Button variant="secondary" className="w-full sm:w-auto gap-2">
-                                <Users className="h-4 w-4" />
-                                Manage {activeTab === "DM_SETTER" ? "DM Setters" : activeTab.charAt(0) + activeTab.slice(1).toLowerCase() + "s"}
-                            </Button>
-                        }
-                    />
-                </div>
             </Tabs>
+
+            <EODDetailsModal
+                report={selectedReport}
+                isOpen={isDetailsOpen}
+                onClose={() => setIsDetailsOpen(false)}
+                role={activeTab}
+            />
         </div>
     );
 }

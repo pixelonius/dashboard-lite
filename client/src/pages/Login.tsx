@@ -23,10 +23,10 @@ export default function Login() {
 
   if (user) {
     const defaultRoute =
-      user.role === 'SALES' ? '/sales' :
+      user.role === 'SALES' ? '/home' :
         user.role === 'MARKETING' ? '/marketing' :
           user.role === 'CSM' ? '/csm' :
-            '/sales';
+            '/home';
     return <Redirect to={defaultRoute} />;
   }
 

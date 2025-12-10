@@ -60,7 +60,7 @@ function Router() {
 
     switch (user.role) {
       case 'SALES':
-        return '/sales';
+        return '/home';
       case 'MARKETING':
         return '/marketing/content';
       case 'ADMIN':
