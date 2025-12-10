@@ -62,7 +62,7 @@ export default function Login() {
 
       toast({
         title: "Account Created",
-        description: "Welcome to AST Portal!",
+        description: "Welcome to HMD Portal!",
       });
 
       await login(email, password);
@@ -89,7 +89,7 @@ export default function Login() {
             <img src="/rc-logo.png" alt="Company" width={40} height={40} className="invert brightness-0 opacity-90" />
           </div>
           <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground mb-1">Dashboard Lite</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground mb-1">HDM Dashboard</h1>
             <p className="text-muted-foreground text-sm">Sign in to access your dashboard</p>
           </div>
         </div>

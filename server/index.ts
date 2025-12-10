@@ -1,3 +1,4 @@
+import "dotenv/config"; // Load environment variables from .env
 import { app } from "./app";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";

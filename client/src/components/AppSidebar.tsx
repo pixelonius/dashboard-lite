@@ -78,7 +78,7 @@ export default function AppSidebar() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-lg tracking-tight text-foreground">Dashboard</span>
-                <span className="text-xs text-muted-foreground font-medium">Lite Edition</span>
+                <span className="text-xs text-muted-foreground font-medium">HDM Limited</span>
               </div>
             </div>
           </SidebarGroupLabel>
